@@ -70,7 +70,7 @@ const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
     }
     setIsLoading(true);
     try {
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/signup', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

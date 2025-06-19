@@ -253,7 +253,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/me', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -305,7 +305,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/updateMe', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/updateMe', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -412,7 +412,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('paymentId', paymentID);
       formData.append('screenshot', paymentImage);
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/tpin/purchase', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -431,7 +431,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setPaymentImagePreview('');
         
         // Refresh user data
-        const updatedUserResponse = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/me', {
+        const updatedUserResponse = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -483,7 +483,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/referral/direct', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/direct', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -521,7 +521,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/referral/income', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/income', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -578,7 +578,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/activate', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/activate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -620,7 +620,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/dashboard', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -655,7 +655,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/matrix/structure', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/matrix/structure', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -696,7 +696,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/tpin/transfer', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -760,7 +760,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/withdrawal/request', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/request', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -822,7 +822,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/withdrawal/approved/list', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/approved/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -851,7 +851,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/withdrawal/pending/list', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/pending/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -880,7 +880,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/withdrawal/rejected/list', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/rejected/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -931,7 +931,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/mlm/referral/link', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/link', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -966,7 +966,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/tpin/payments', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/payments', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1005,7 +1005,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/tpin/status', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/status', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1056,7 +1056,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/account/change-password', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/change-password', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1101,7 +1101,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/account/profile', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1163,7 +1163,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/account/profile', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
