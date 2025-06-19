@@ -533,9 +533,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setIncomeError('');
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setIncomeError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingIncome(false);
         return;
       }
@@ -634,9 +635,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setMlmError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setMlmError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingMlm(false);
         return;
       }
@@ -669,9 +671,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setMatrixStructureError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setMatrixStructureError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingMatrixStructure(false);
         return;
       }
@@ -710,9 +713,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setTransferMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setTransferMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsTransferringTpin(false);
         return;
       }
@@ -860,9 +864,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch approved withdrawals
   const fetchApprovedWithdrawals = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setWithdrawalError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         return;
       }
 
@@ -889,9 +894,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch pending withdrawals
   const fetchPendingWithdrawals = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setWithdrawalError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         return;
       }
 
@@ -918,9 +924,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch rejected withdrawals
   const fetchRejectedWithdrawals = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setWithdrawalError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         return;
       }
 
@@ -968,9 +975,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setReferralLinkError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setReferralLinkError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingReferralLink(false);
         return;
       }
@@ -1003,9 +1011,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setTpinPaymentError('');
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setTpinPaymentError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingTpinPayments(false);
         return;
       }
@@ -1042,9 +1051,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setTpinStatusData(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setTpinMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsLoadingTpinStatus(false);
         return;
       }
@@ -1093,9 +1103,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setPasswordSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setPasswordError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsChangingPassword(false);
         return;
       }
@@ -1139,9 +1150,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch profile data
   const fetchProfileData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setProfileError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         return;
       }
 
@@ -1200,9 +1212,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setProfileSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setProfileError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsUpdatingProfile(false);
         return;
       }
