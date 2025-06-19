@@ -4243,7 +4243,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                   Account Number
                                 </label>
                                 <div className="bg-white p-2 border rounded text-sm font-mono">
-                                  1234567890123456
+                                43388906230
                                 </div>
                               </div>
                               
@@ -4252,7 +4252,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                   IFSC Code
                                 </label>
                                 <div className="bg-white p-2 border rounded text-sm font-mono">
-                                  SBIN0001234
+                                SBIN0009696
                                 </div>
                               </div>
                               
@@ -4282,9 +4282,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                 </label>
                                 <div className="bg-white p-3 border rounded-lg inline-block">
                                   <img 
-                                    src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=forlifetradingmdia@paytm&pn=ForLifeTrading%20India&am=499&cu=INR" 
+                                    src="./image.png" 
                                     alt="UPI QR Code" 
-                                    className="w-24 h-24"
+                                    className="w-25 h-25"
                                   />
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
@@ -4301,7 +4301,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                  Crypto Wallet Address (USDT TRC20)
                                </label>
                                <div className="bg-white p-2 border rounded text-sm font-mono break-all">
-                                 TQn9Y2khEsLMWD7oaSS2oS8C4x7P3n9eaP
+                               0x291e8c34cdea3c833a77f2f3c96eaed453659ca3
                                </div>
                              </div>
                              
@@ -4312,9 +4312,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                  </label>
                                  <div className="bg-white p-3 border rounded-lg inline-block">
                                    <img 
-                                     src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=TQn9Y2khEsLMWD7oaSS2oS8C4x7P3n9eaP" 
+                                     src="./crupto.png" 
                                      alt="Crypto Wallet QR Code" 
-                                     className="w-24 h-24"
+                                     className="w-26 h-26"
                                    />
                                  </div>
                                  <p className="text-xs text-gray-500 mt-1">

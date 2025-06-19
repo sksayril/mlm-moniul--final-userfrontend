@@ -175,16 +175,18 @@ const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
                   </svg>
                   <span>Using referral code: <span className="font-semibold text-green-700">{formData.referralCode}</span></span>
                 </span> : 
-                'Enter your Referral code to register'}
+                <span className="text-red-600 font-medium">* Referral code is required to register</span>}
             </span>
             <div className="relative">
               <input
                 type="text"
                 name="referralCode"
+                required
                 value={formData.referralCode}
                 onChange={handleInputChange}
                 readOnly={isReferralFromUrl}
-                className={`w-full px-4 py-3 ${formData.referralCode ? 'bg-[#0d6e87]' : 'bg-[#0d4d87]'} text-white font-semibold rounded focus:outline-none focus:ring-2 focus:ring-[#2196f3] mb-4 ${isReferralFromUrl ? 'cursor-not-allowed' : ''}`}
+                placeholder="Enter referral code (required)"
+                className={`w-full px-4 py-3 ${formData.referralCode ? 'bg-[#0d6e87]' : 'bg-[#0d4d87]'} text-white font-semibold rounded focus:outline-none focus:ring-2 focus:ring-[#2196f3] mb-4 ${isReferralFromUrl ? 'cursor-not-allowed' : ''} placeholder-white/70`}
               />
               {formData.referralCode && isReferralFromUrl && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
