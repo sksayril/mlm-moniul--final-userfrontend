@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (token: string, userData: any) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -30,12 +30,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       });
       const data = await response.json();
       if (response.ok && data.status === 'success') {
-        // Store token and user data in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-        
-        // Call onLogin to update authentication state
-        onLogin();
+        // Call onLogin with token and user data (no localStorage storage)
+        onLogin(data.token, data.data.user);
       } else {
         setError(data.message || 'Login failed.');
       }

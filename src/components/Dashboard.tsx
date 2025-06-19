@@ -32,6 +32,21 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Utility function to get token from sessionStorage
+const getSessionToken = () => {
+  try {
+    const sessionData = sessionStorage.getItem('user_session');
+    if (!sessionData) return null;
+    const parsed = JSON.parse(sessionData);
+    return parsed.token;
+  } catch {
+    return null;
+  }
+};
+
+// Replace all localStorage.getItem('token') with getSessionToken()
+// This is a comprehensive replacement for session security
+
 const sidebarMenu = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Activation Wallet', icon: Wallet },
@@ -145,6 +160,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [ifscCode, setIfscCode] = useState('');
+  const [cryptoWalletAddress, setCryptoWalletAddress] = useState('');
+  const [cryptoWalletType, setCryptoWalletType] = useState('');
+  const [cryptoNetwork, setCryptoNetwork] = useState('');
   const [isRequestingWithdrawal, setIsRequestingWithdrawal] = useState(false);
   const [withdrawalMessage, setWithdrawalMessage] = useState({ type: '', text: '' });
   const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([]);
@@ -246,9 +264,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const fetchUserData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoading(false);
         return;
       }
@@ -280,9 +299,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   }, []);
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Session is cleared by the parent component
     onLogout();
   };
 
@@ -298,9 +315,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setNameUpdateMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setNameUpdateMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsUpdatingName(false);
         return;
       }
@@ -320,8 +338,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         // Update user data in state with the complete updated user data from response
         if (data.data && data.data.user) {
           setUserData(data.data.user);
-          // Also update localStorage with new user data
-          localStorage.setItem('user', JSON.stringify(data.data.user));
+                  // Session storage is managed by SessionManager in App.tsx
         }
         setNameUpdateMessage({ type: 'success', text: 'Name updated successfully!' });
         setNewName(''); // Clear the input
@@ -351,7 +368,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
     const packageData = selectedPackage === 'rupees' 
       ? { currency: 'INR', amount: '499' }
-      : { currency: 'USD', amount: '20' };
+      : { currency: 'USD', amount: '6' };
     
     setPaymentData(packageData);
     setShowGenerateModal(false);
@@ -397,9 +414,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setTpinMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setTpinMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsGeneratingTpin(false);
         return;
       }
@@ -476,9 +494,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setReferralError('');
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setReferralError('Authentication token not found');
+        onLogout(); // Auto logout if no token
         setIsLoadingReferrals(false);
         return;
       }
@@ -571,9 +590,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setActivateTpinMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setActivateTpinMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsActivatingTpin(false);
         return;
       }
@@ -592,11 +612,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       if (response.ok && data.status === 'success') {
         setActivateTpinMessage({ type: 'success', text: data.message || 'Account activated successfully' });
         setActivateTpinCode('');
-        // Optionally close modal after success
+        // Close modal and reload the page after success
         setTimeout(() => {
           setShowActivateTpinModal(false);
           setActivateTpinMessage({ type: '', text: '' });
-        }, 2500);
+          window.location.reload();
+        }, 2000);
       } else {
         setActivateTpinMessage({ type: 'error', text: data.message || 'Failed to activate account' });
       }
@@ -744,6 +765,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       return;
     }
 
+    // Validate crypto wallet details if crypto is selected
+    if (paymentMethod === 'crypto' && (!cryptoWalletAddress.trim() || !cryptoWalletType.trim() || !cryptoNetwork.trim())) {
+      setWithdrawalMessage({ type: 'error', text: 'Please provide complete crypto wallet details' });
+      return;
+    }
+
     if (parseFloat(withdrawalAmount) < 150) {
       setWithdrawalMessage({ type: 'error', text: 'Minimum withdrawal amount is ₹150' });
       return;
@@ -753,11 +780,42 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setWithdrawalMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       if (!token) {
         setWithdrawalMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout(); // Auto logout if no token
         setIsRequestingWithdrawal(false);
         return;
+      }
+
+      let requestBody;
+      if (paymentMethod === 'upi') {
+        requestBody = {
+          amount: parseFloat(withdrawalAmount),
+          paymentMethod: 'upi',
+          upiId: upiId
+        };
+      } else if (paymentMethod === 'bank') {
+        requestBody = {
+          amount: parseFloat(withdrawalAmount),
+          paymentMethod: 'bank',
+          bankDetails: {
+            accountNumber: accountNumber,
+            ifscCode: ifscCode,
+            accountHolderName: accountName,
+            bankName: bankName
+          }
+        };
+      } else if (paymentMethod === 'crypto') {
+        requestBody = {
+          amount: parseFloat(withdrawalAmount),
+          paymentMethod: 'crypto',
+          cryptoWallet: {
+            walletAddress: cryptoWalletAddress,
+            walletType: cryptoWalletType,
+            network: cryptoNetwork
+          }
+        };
       }
 
       const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/request', {
@@ -766,24 +824,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(
-          paymentMethod === 'upi' 
-            ? {
-                amount: parseFloat(withdrawalAmount),
-                paymentMethod: 'upi',
-                upiId: upiId
-              }
-            : {
-                amount: parseFloat(withdrawalAmount),
-                paymentMethod: 'bank',
-                bankDetails: {
-                  accountNumber: accountNumber,
-                  ifscCode: ifscCode,
-                  accountHolderName: accountName,
-                  bankName: bankName
-                }
-              }
-        ),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -798,6 +839,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setAccountNumber('');
         setAccountName('');
         setIfscCode('');
+        setCryptoWalletAddress('');
+        setCryptoWalletType('');
+        setCryptoNetwork('');
         // Refresh withdrawal history if we're viewing it
         if (activeWithdrawalCard === 'Withdrawal History') {
           fetchWithdrawalHistory();
@@ -1358,84 +1402,89 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           </div>
         </header>
         {/* Content Area */}
-        <main className="flex-1 p-6 bg-[#f3f4f6] overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-[#f3f4f6] overflow-y-auto">
           {activeMenu === 'Dashboard' ? (
             <>
               {/* Top Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {/* User Info */}
-                <div className="bg-white rounded-lg shadow p-5 flex items-center gap-4 min-h-[110px]">
-                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-                    <User className="h-10 w-10 text-blue-400" />
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-5 flex items-center gap-3 sm:gap-4 min-h-[100px] sm:min-h-[110px]">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <User className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-blue-400" />
                   </div>
-                  <div>
-                    <div className="font-bold text-lg text-[#222] leading-tight">{userData?.name}</div>
-                    <div className="text-sm text-gray-700">User Id: {userData?.userId}</div>
-                    <div className="text-sm text-gray-700">Email: {userData?.email}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm sm:text-base lg:text-lg text-[#222] leading-tight truncate">{userData?.name}</div>
+                    <div className="text-xs sm:text-sm text-gray-700 truncate">User Id: {userData?.userId}</div>
+                    <div className="text-xs sm:text-sm text-gray-700 truncate">Email: {userData?.email}</div>
                   </div>
                 </div>
                 {/* Account Status */}
-                <div className="bg-white rounded-lg shadow p-5 flex flex-col justify-center min-h-[110px]">
-                  <div className="font-semibold text-gray-700 mb-1">Account Status</div>
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-5 flex flex-col justify-center min-h-[100px] sm:min-h-[110px]">
+                  <div className="font-semibold text-gray-700 mb-1 text-sm sm:text-base">Account Status</div>
                   <div className="text-center">
                     {userData?.isActive ? (
-                      <span className="text-green-600 font-bold text-lg">Active</span>
+                      <span className="text-green-600 font-bold text-base sm:text-lg">Active</span>
                     ) : (
                       <>
-                        <span className="text-red-600 font-bold text-lg">Inactive</span>
+                        <span className="text-red-600 font-bold text-base sm:text-lg">Inactive</span>
                         <br />
-                        <span className="text-xs text-red-500 font-medium cursor-pointer hover:underline">Click here to Activate the Account</span>
+                        <span 
+                          onClick={handleActivateTpinClick}
+                          className="text-xs sm:text-sm text-red-500 font-medium cursor-pointer hover:underline"
+                        >
+                          Click here to Activate the Account
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
                 {/* Total Income */}
-                <div className="rounded-lg shadow p-5 flex flex-col justify-center min-h-[110px] bg-gradient-to-r from-[#ff9800] to-[#ffb74d] text-white">
-                  <div className="font-semibold text-white mb-1">Total Income</div>
-                  <div className="text-3xl font-bold">
+                <div className="rounded-lg shadow p-3 sm:p-4 lg:p-5 flex flex-col justify-center min-h-[100px] sm:min-h-[110px] bg-gradient-to-r from-[#ff9800] to-[#ffb74d] text-white sm:col-span-2 lg:col-span-1">
+                  <div className="font-semibold text-white mb-1 text-sm sm:text-base">Total Income</div>
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
                     ₹{userData?.incomeWallet?.totalEarnings?.toFixed(2) || '0.00'}
                   </div>
                 </div>
               </div>
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                 {/* My Team */}
-                <div className="bg-[#1856a7] rounded-lg shadow p-4 text-white flex flex-col items-center min-h-[110px]">
-                  <Users className="h-8 w-8 mb-2" />
-                  <div className="font-semibold">My Team</div>
-                  <div className="text-xs mt-1">Total Team : {userData?.teamSize || 0}</div>
-                  <div className="text-xs">Rank : {userData?.rank || 'Newcomer'}</div>
-                  <div className="text-xs">Referrals : {userData?.referrals?.length || 0}</div>
+                <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
+                  <div className="font-semibold text-sm sm:text-base text-center">My Team</div>
+                  <div className="text-xs mt-1 text-center">Total Team : {userData?.teamSize || 0}</div>
+                  <div className="text-xs text-center">Rank : {userData?.rank || 'Newcomer'}</div>
+                  <div className="text-xs text-center">Referrals : {userData?.referrals?.length || 0}</div>
                 </div>
                 {/* My Direct */}
-                <div className="bg-[#1856a7] rounded-lg shadow p-4 text-white flex flex-col items-center min-h-[110px]">
-                  <Users className="h-8 w-8 mb-2" />
-                  <div className="font-semibold">My Direct</div>
-                  <div className="text-xs mt-1">Active : 0</div>
-                  <div className="text-xs">Inactive : 0</div>
+                <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
+                  <div className="font-semibold text-sm sm:text-base text-center">My Direct</div>
+                  <div className="text-xs mt-1 text-center">Active : 0</div>
+                  <div className="text-xs text-center">Inactive : 0</div>
                 </div>
                 {/* My Single Leg Team */}
-                <div className="bg-[#1856a7] rounded-lg shadow p-4 text-white flex flex-col items-center min-h-[110px]">
-                  <Users className="h-8 w-8 mb-2" />
-                  <div className="font-semibold">My Single Leg Team</div>
-                  <div className="text-xs mt-1">Active(12 USDT) : 0</div>
-                  <div className="text-xs">Active(24 USDT) : 0</div>
-                  <div className="text-xs">Active(48 USDT) : 0</div>
-                  <div className="text-xs">Active(96 USDT) : 0</div>
-                  <div className="text-xs">Active(192 USDT) : 0</div>
-                  <div className="text-xs">Inactive : 0</div>
-                </div>
+                {/* <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px] sm:col-span-2 lg:col-span-1">
+                  <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
+                  <div className="font-semibold text-sm sm:text-base text-center">My Single Leg Team</div>
+                  <div className="text-xs mt-1 text-center">Active(12 USDT) : 0</div>
+                  <div className="text-xs text-center">Active(24 USDT) : 0</div>
+                  <div className="text-xs text-center">Active(48 USDT) : 0</div>
+                  <div className="text-xs text-center">Active(96 USDT) : 0</div>
+                  <div className="text-xs text-center">Active(192 USDT) : 0</div>
+                  <div className="text-xs text-center">Inactive : 0</div>
+                </div> */}
                 {/* Level Income */}
-                <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center min-h-[110px]">
-                  <BarChart3 className="h-8 w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7]">Level Income</div>
-                  <div className="text-lg font-bold text-[#1856a7]">0.00</div>
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Level Income</div>
+                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">0.00</div>
                 </div>
                 {/* Direct Bonus */}
-                <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center min-h-[110px]">
-                  <DollarSign className="h-8 w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7]">Direct Bonus</div>
-                  <div className="text-lg font-bold text-[#1856a7]">
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Direct Bonus</div>
+                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
                     ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
                   </div>
                 </div>
@@ -1446,18 +1495,18 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="text-lg font-bold text-[#1856a7]">USDT 0.00</div>
                 </div> */}
                 {/* Income Wallet */}
-                <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center min-h-[110px]">
-                  <Wallet className="h-8 w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7]">Income Wallet</div>
-                  <div className="text-lg font-bold text-[#1856a7]">
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Income Wallet</div>
+                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
                     ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
                   </div>
                 </div>
                 {/* Total Withdraw */}
-                <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center min-h-[110px]">
-                  <DollarSign className="h-8 w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7]">Total Withdraw</div>
-                  <div className="text-lg font-bold text-[#1856a7]">
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
+                  <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Total Withdraw</div>
+                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
                     ₹{userData?.incomeWallet?.withdrawnAmount?.toFixed(2) || '0.00'}
                   </div>
                 </div>
@@ -1465,33 +1514,33 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               
               {/* TPins Section */}
               {userData?.tpins && userData.tpins.length > 0 && (
-                <div className="bg-white rounded-lg shadow p-6 mt-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Your TPins</h3>
-                  <div className="overflow-x-auto">
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Your TPins</h3>
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activation Date</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Purchase Date</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Activation Date</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {userData.tpins.map((tpin, index) => (
                           <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tpin.code}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">{tpin.code}</td>
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 tpin.isUsed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                               }`}>
                                 {tpin.isUsed ? 'Used' : 'Available'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
                               {new Date(tpin.purchaseDate).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden lg:table-cell">
                               {tpin.activationDate ? new Date(tpin.activationDate).toLocaleDateString() : '-'}
                             </td>
                           </tr>
@@ -1499,35 +1548,49 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       </tbody>
                     </table>
                   </div>
+                  {/* Mobile-only additional info */}
+                  <div className="block sm:hidden mt-3 space-y-2">
+                    {userData.tpins.map((tpin, index) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-3 text-xs">
+                        <div className="font-medium text-gray-900">{tpin.code}</div>
+                        <div className="text-gray-500 mt-1">
+                          Purchase: {new Date(tpin.purchaseDate).toLocaleDateString()}
+                        </div>
+                        <div className="text-gray-500">
+                          Activation: {tpin.activationDate ? new Date(tpin.activationDate).toLocaleDateString() : '-'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </>
           ) : activeMenu === 'Generate TPin' ? (
             /* Generate TPin Section */
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* TPin Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {/* Get TPin Card */}
                 <div 
                   onClick={handleGetTpinClick}
-                  className={`bg-white rounded-lg shadow p-6 cursor-pointer transition-all duration-200 border-2 ${
+                  className={`bg-white rounded-lg shadow p-4 sm:p-6 cursor-pointer transition-all duration-200 border-2 ${
                     activeTpinCard === 'Get TPin' 
                       ? 'border-blue-500 bg-blue-50' 
                       : 'border-transparent hover:border-gray-300'
                   }`}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 sm:mb-3 ${
                       activeTpinCard === 'Get TPin' ? 'bg-blue-500' : 'bg-gray-400'
                     }`}>
-                      <Hash className="h-6 w-6 text-white" />
+                      <Hash className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
-                    <h3 className={`font-semibold ${
+                    <h3 className={`font-semibold text-sm sm:text-base ${
                       activeTpinCard === 'Get TPin' ? 'text-blue-700' : 'text-gray-700'
                     }`}>
                       Get TPin
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       View and manage your existing TPins
                     </p>
                   </div>
@@ -1536,24 +1599,24 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 {/* Generate TPin Card */}
                 <div 
                   onClick={handleGenerateClick}
-                  className={`bg-white rounded-lg shadow p-6 cursor-pointer transition-all duration-200 border-2 ${
+                  className={`bg-white rounded-lg shadow p-4 sm:p-6 cursor-pointer transition-all duration-200 border-2 ${
                     activeTpinCard === 'Generate TPin' 
                       ? 'border-blue-500 bg-blue-50' 
                       : 'border-transparent hover:border-gray-300'
                   }`}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 sm:mb-3 ${
                       activeTpinCard === 'Generate TPin' ? 'bg-blue-500' : 'bg-gray-400'
                     }`}>
-                      <Hash className="h-6 w-6 text-white" />
+                      <Hash className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
-                    <h3 className={`font-semibold ${
+                    <h3 className={`font-semibold text-sm sm:text-base ${
                       activeTpinCard === 'Generate TPin' ? 'text-blue-700' : 'text-gray-700'
                     }`}>
                       Generate TPin
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       Create new TPins for your account
                     </p>
                   </div>
@@ -1562,24 +1625,24 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 {/* Transfer TPin Card */}
                 <div 
                   onClick={() => setActiveTpinCard('Transfer TPin')}
-                  className={`bg-white rounded-lg shadow p-6 cursor-pointer transition-all duration-200 border-2 ${
+                  className={`bg-white rounded-lg shadow p-4 sm:p-6 cursor-pointer transition-all duration-200 border-2 ${
                     activeTpinCard === 'Transfer TPin' 
                       ? 'border-blue-500 bg-blue-50' 
                       : 'border-transparent hover:border-gray-300'
-                  }`}
+                  } sm:col-span-2 lg:col-span-1`}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 sm:mb-3 ${
                       activeTpinCard === 'Transfer TPin' ? 'bg-blue-500' : 'bg-gray-400'
                     }`}>
-                      <Share2 className="h-6 w-6 text-white" />
+                      <Share2 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
-                    <h3 className={`font-semibold ${
+                    <h3 className={`font-semibold text-sm sm:text-base ${
                       activeTpinCard === 'Transfer TPin' ? 'text-blue-700' : 'text-gray-700'
                     }`}>
                       Transfer TPin
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       Transfer your TPins to other users
                     </p>
                   </div>
@@ -2567,6 +2630,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             <option value="">Select payment method</option>
                             <option value="upi">UPI</option>
                             <option value="bank">Bank Transfer</option>
+                            <option value="crypto">Crypto Wallet</option>
                           </select>
                         </div>
                       </div>
@@ -2660,6 +2724,94 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         </div>
                       )}
 
+                      {/* Crypto Wallet Details Section - Only show when Crypto is selected */}
+                      {paymentMethod === 'crypto' && (
+                        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                          <h4 className="text-sm font-medium text-purple-800 mb-3">Crypto Wallet Details</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label htmlFor="cryptoWalletType" className="block text-sm font-medium text-gray-700 mb-1">
+                                Wallet Type <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                id="cryptoWalletType"
+                                value={cryptoWalletType}
+                                onChange={(e) => {
+                                  setCryptoWalletType(e.target.value);
+                                  // Auto-set network based on wallet type
+                                  const networkMap: { [key: string]: string } = {
+                                    'bitcoin': 'BTC',
+                                    'ethereum': 'ETH',
+                                    'binance': 'BSC',
+                                    'tron': 'TRX',
+                                    'polygon': 'MATIC',
+                                    'other': ''
+                                  };
+                                  setCryptoNetwork(networkMap[e.target.value] || '');
+                                }}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                disabled={isRequestingWithdrawal}
+                              >
+                                <option value="">Select wallet type</option>
+                                <option value="bitcoin">Bitcoin (BTC)</option>
+                                <option value="ethereum">Ethereum (ETH)</option>
+                                <option value="binance">Binance Smart Chain (BSC)</option>
+                                <option value="tron">Tron (TRX)</option>
+                                <option value="polygon">Polygon (MATIC)</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="cryptoNetwork" className="block text-sm font-medium text-gray-700 mb-1">
+                                Network <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id="cryptoNetwork"
+                                type="text"
+                                value={cryptoNetwork}
+                                onChange={(e) => setCryptoNetwork(e.target.value)}
+                                placeholder="ETH, BTC, BSC, TRX, MATIC"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                disabled={isRequestingWithdrawal}
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Network will auto-fill based on wallet type</p>
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <label htmlFor="cryptoWalletAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                              Wallet Address <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              id="cryptoWalletAddress"
+                              type="text"
+                              value={cryptoWalletAddress}
+                              onChange={(e) => setCryptoWalletAddress(e.target.value)}
+                              placeholder="0x742d35Cc6634C0532925a3b8D431A9123C..."
+                              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-sm"
+                              disabled={isRequestingWithdrawal}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Enter your complete wallet address - double check for accuracy</p>
+                          </div>
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">Important Notice</h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                  <p>• Double-check your wallet address before submitting</p>
+                                  <p>• Incorrect addresses will result in permanent loss of funds</p>
+                                  <p>• Make sure the network matches your wallet type</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Error/Success Message */}
                       {withdrawalMessage.text && (
                         <div className={`p-3 rounded-md text-sm ${
@@ -2679,7 +2831,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             !withdrawalAmount.trim() || 
                             !paymentMethod.trim() ||
                             (paymentMethod === 'upi' && !upiId.trim()) ||
-                            (paymentMethod === 'bank' && (!bankName.trim() || !accountNumber.trim() || !accountName.trim() || !ifscCode.trim()))
+                            (paymentMethod === 'bank' && (!bankName.trim() || !accountNumber.trim() || !accountName.trim() || !ifscCode.trim())) ||
+                            (paymentMethod === 'crypto' && (!cryptoWalletAddress.trim() || !cryptoWalletType.trim() || !cryptoNetwork.trim()))
                           }
                           className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-md hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -4046,29 +4199,29 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             ></div>
 
             {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full mx-4 sm:mx-0">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="w-full">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl leading-6 font-semibold text-gray-900 flex items-center">
-                        <Key className="h-6 w-6 text-green-600 mr-2" />
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h3 className="text-lg sm:text-xl leading-6 font-semibold text-gray-900 flex items-center">
+                        <Key className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mr-2" />
                         Activate TPin
                       </h3>
                       <button
                         onClick={() => setShowActivateTpinModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 p-1"
                       >
-                        <X className="h-6 w-6" />
+                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
                       </button>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-6">
+                    <p className="text-sm text-gray-600 mb-4 sm:mb-6">
                       Enter your TPin code to activate your account and start earning.
                     </p>
 
                     {/* TPin Activation Form */}
-                    <form onSubmit={handleActivateTpinSubmit} className="space-y-4">
+                    <form onSubmit={handleActivateTpinSubmit} className="space-y-3 sm:space-y-4">
                       <div>
                         <label htmlFor="activateTpinCode" className="block text-sm font-medium text-gray-700 mb-2">
                           TPin Code
@@ -4079,18 +4232,18 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                           value={activateTpinCode}
                           onChange={(e) => setActivateTpinCode(e.target.value.toUpperCase())}
                           placeholder="Enter your TPin code"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-center text-lg tracking-wider uppercase"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-center text-base sm:text-lg tracking-wider uppercase"
                           maxLength={10}
                           disabled={isActivatingTpin}
                         />
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-gray-500 mt-1 sm:mt-2">
                           Enter the 10-digit TPin code you received after purchase
                         </p>
                       </div>
 
                       {/* Error/Success Message */}
                       {activateTpinMessage.text && (
-                        <div className={`p-3 rounded-md text-sm ${
+                        <div className={`p-2 sm:p-3 rounded-md text-xs sm:text-sm ${
                           activateTpinMessage.type === 'error' 
                             ? 'bg-red-50 border border-red-200 text-red-600' 
                             : 'bg-green-50 border border-green-200 text-green-600'
@@ -4099,11 +4252,11 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         </div>
                       )}
 
-                      <div className="flex justify-end gap-3 pt-4">
+                      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4">
                         <button
                           type="button"
                           onClick={() => setShowActivateTpinModal(false)}
-                          className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                          className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-sm sm:text-base order-2 sm:order-1"
                           disabled={isActivatingTpin}
                         >
                           Cancel
@@ -4111,17 +4264,19 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <button
                           type="submit"
                           disabled={isActivatingTpin || !activateTpinCode.trim()}
-                          className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-md hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-md hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm sm:text-base order-1 sm:order-2"
                         >
                           {isActivatingTpin ? (
                             <>
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Activating...
+                              <span className="hidden sm:inline">Activating...</span>
+                              <span className="sm:hidden">Activating</span>
                             </>
                           ) : (
                             <>
                               <Key className="h-4 w-4" />
-                              Activate TPin
+                              <span className="hidden sm:inline">Activate TPin</span>
+                              <span className="sm:hidden">Activate</span>
                             </>
                           )}
                         </button>
@@ -4318,7 +4473,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                    />
                                  </div>
                                  <p className="text-xs text-gray-500 mt-1">
-                                   Send $20 USDT to this address
+                                   Send $6 USDT to this address
                                  </p>
                                </div>
                              </div>
@@ -4409,9 +4564,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     {/* Payment Summary */}
                     <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <h4 className="font-medium text-blue-800 mb-1">Payment Details</h4>
-                      <p className="text-sm text-blue-700">
+                      {/* <p className="text-sm text-blue-700">
                         Amount: <strong>{paymentData.currency === 'INR' ? '₹' : '$'}{paymentData.amount}</strong>
-                      </p>
+                      </p> */}
                       <p className="text-sm text-blue-700">
                         Currency: <strong>{paymentData.currency}</strong>
                       </p>
