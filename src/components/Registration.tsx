@@ -8,7 +8,6 @@ interface RegistrationProps {
 const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
   const [formData, setFormData] = useState({
     referralCode: '',
-    username: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -77,7 +76,6 @@ const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
         },
         body: JSON.stringify({
           name: formData.firstName + ' ' + formData.lastName,
-          username: formData.username,
           email: formData.email,
           country: formData.country,
           mobile: formData.mobile,
@@ -210,18 +208,7 @@ const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
           {/* Personal Information Section */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-1">PERSONAL INFORMATION</label>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">ENTER USERNAME</label>
-              <input
-                type="text"
-                name="username"
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder="Enter Username"
-                className="w-full px-4 py-3 bg-[#0d4d87] text-white rounded font-medium focus:outline-none focus:ring-2 focus:ring-[#2196f3] placeholder-white/80"
-              />
-            </div>
+
             <div className="flex gap-4 mb-4">
               <div className="w-1/2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">FIRST NAME</label>
@@ -383,10 +370,7 @@ const Registration: React.FC<RegistrationProps> = ({ onRegister }) => {
                       <td className="py-2 px-3 font-semibold text-[#2196f3]">Email</td>
                       <td className="py-2 px-3 text-gray-800">{registeredData?.email}</td>
                     </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-semibold text-[#2196f3]">Username</td>
-                      <td className="py-2 px-3 text-gray-800">{registeredData?.username}</td>
-                    </tr>
+
                     <tr>
                       <td className="py-2 px-3 font-semibold text-[#2196f3]">Referral Code</td>
                       <td className="py-2 px-3 text-gray-800">{registeredData?.referralCode}</td>
