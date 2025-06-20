@@ -29,7 +29,10 @@ import {
   LayoutDashboard,
   RefreshCw,
   Lock,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
+import ReactApexChart from 'react-apexcharts';
 import { Link } from 'react-router-dom';
 
 // Utility function to get token from sessionStorage
@@ -50,9 +53,9 @@ const getSessionToken = () => {
 const sidebarMenu = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Activation Wallet', icon: Wallet },
-  { label: 'Generate TPin', icon: Hash },
   { label: 'Referral Link', icon: LinkIcon },
   { label: 'Income Wallet', icon: DollarSign },
+  { label: 'My Investment', icon: BarChart3 },
   { label: 'Your Network', icon: Network },
   // { label: 'Update Name', icon: Edit },
   { label: 'Account Settings', icon: Settings },
@@ -67,6 +70,9 @@ interface UserData {
   userId: string;
   role: string;
   isActive: boolean;
+  address?: {
+    country: string;
+  };
   incomeWallet?: {
     balance: number;
     selfIncome: number;
@@ -78,6 +84,27 @@ interface UserData {
     totalEarnings: number;
     withdrawnAmount: number;
     lastUpdated: string;
+  };
+  investmentWallet?: {
+    balance: number;
+    lastUpdated: string;
+    totalInvested: number;
+    totalMatured: number;
+    totalReturns: number;
+  };
+  cryptoWallet?: {
+    balance: number;
+    coin: string;
+    enabled: boolean;
+    lastUpdated: string;
+    transactions: Array<{
+      amount: number;
+      type: string;
+      description: string;
+      inrValue: number;
+      createdAt: string;
+      _id: string;
+    }>;
   };
   tradingPackage?: {
     purchased: boolean;
@@ -97,6 +124,7 @@ interface UserData {
   incomeTransactions?: any[];
   downline?: any[];
   withdrawals?: any[];
+  investments?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -204,6 +232,150 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedInvestmentCurrency, setSelectedInvestmentCurrency] = useState('');
+  const [showInvestmentPayment, setShowInvestmentPayment] = useState(false);
+  const [investmentPaymentID, setInvestmentPaymentID] = useState('');
+  const [investmentPaymentImage, setInvestmentPaymentImage] = useState<File | null>(null);
+  const [investmentPaymentImagePreview, setInvestmentPaymentImagePreview] = useState('');
+  const [isProcessingInvestment, setIsProcessingInvestment] = useState(false);
+  const [investmentMessage, setInvestmentMessage] = useState({ type: '', text: '' });
+  const [investmentWalletData, setInvestmentWalletData] = useState<any>(null);
+  const [investmentHistoryData, setInvestmentHistoryData] = useState<any>(null);
+  const [isLoadingInvestmentWallet, setIsLoadingInvestmentWallet] = useState(false);
+  const [isLoadingInvestmentHistory, setIsLoadingInvestmentHistory] = useState(false);
+  const [investmentWalletError, setInvestmentWalletError] = useState('');
+  const [investmentHistoryError, setInvestmentHistoryError] = useState('');
+  const [activeInvestmentTab, setActiveInvestmentTab] = useState('wallet');
+  const [investmentPercentageChange, setInvestmentPercentageChange] = useState(0);
+  const [cryptoPercentageChange, setCryptoPercentageChange] = useState(0);
+  const [displayInvestmentBalance, setDisplayInvestmentBalance] = useState<number | null>(null);
+  const [displayCryptoBalance, setDisplayCryptoBalance] = useState<number | null>(null);
+  const [balanceAnimating, setBalanceAnimating] = useState(false);
+  
+  // Chart data for investment performance
+  const [investmentChartOptions, setInvestmentChartOptions] = useState<any>({
+    chart: {
+      type: 'area',
+      height: 350,
+      zoom: {
+        enabled: false
+      },
+      toolbar: {
+        show: false
+      },
+      foreColor: '#6B7280',
+      redrawOnWindowResize: true,
+      redrawOnParentResize: true,
+      responsive: true
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 2
+    },
+    colors: ['#4F46E5'],
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.2,
+        stops: [0, 90, 100]
+      }
+    },
+    tooltip: {
+      theme: 'dark'
+    },
+    grid: {
+      borderColor: '#f1f1f1',
+      row: {
+        colors: ['transparent', 'transparent'],
+        opacity: 0.5
+      }
+    },
+    xaxis: {
+      categories: [],
+      labels: {
+        style: {
+          colors: '#6B7280'
+        }
+      }
+    },
+    yaxis: {
+      labels: {
+        formatter: function(value: number) {
+          return '₹' + value.toFixed(2);
+        },
+        style: {
+          colors: '#6B7280'
+        }
+      }
+    }
+  });
+  const [investmentChartSeries, setInvestmentChartSeries] = useState<any>([
+    {
+      name: 'Investment Value',
+      data: []
+    }
+  ]);
+  
+  // Candlestick chart data for MLM Coin
+  const [coinChartOptions, setCoinChartOptions] = useState<any>({
+    chart: {
+      type: 'candlestick',
+      height: 350,
+      toolbar: {
+        show: false
+      },
+      foreColor: '#6B7280',
+      redrawOnWindowResize: true,
+      redrawOnParentResize: true,
+      responsive: true,
+      animations: {
+        enabled: true
+      }
+    },
+    title: {
+      text: 'MLM Coin Price',
+      align: 'left',
+      style: {
+        fontSize: '16px',
+        color: '#1856a7'
+      }
+    },
+    xaxis: {
+      type: 'datetime',
+      labels: {
+        style: {
+          colors: '#6B7280'
+        }
+      }
+    },
+    yaxis: {
+      tooltip: {
+        enabled: true
+      },
+      labels: {
+        formatter: function(value: number) {
+          return '₹' + value.toFixed(2);
+        },
+        style: {
+          colors: '#6B7280'
+        }
+      }
+    },
+    grid: {
+      borderColor: '#f1f1f1'
+    }
+  });
+  const [coinChartSeries, setCoinChartSeries] = useState<any>([
+    {
+      data: []
+    }
+  ]);
 
   // Prevent scrolling when sidebar is open on mobile
   React.useEffect(() => {
@@ -260,6 +432,17 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }
   }, [activeMenu]);
 
+  // Fetch investment data when My Investment section is active
+  useEffect(() => {
+    if (activeMenu === 'My Investment') {
+      if (activeInvestmentTab === 'wallet') {
+        fetchInvestmentWallet();
+      } else if (activeInvestmentTab === 'history') {
+        fetchInvestmentHistory();
+      }
+    }
+  }, [activeMenu, activeInvestmentTab]);
+
   // Fetch user data function
   const fetchUserData = async () => {
     setIsLoading(true);
@@ -296,7 +479,174 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch user data when component mounts
   useEffect(() => {
     fetchUserData();
+    
+    // Generate initial chart data
+    generateInvestmentChartData();
+    generateCoinChartData();
   }, []);
+  
+  // Update candlestick chart data periodically
+  useEffect(() => {
+    const updateCoinChart = () => {
+      // Update the last candlestick data point to simulate live trading
+      if (coinChartSeries[0].data.length > 0) {
+        const newData = [...coinChartSeries[0].data];
+        const lastCandle = {...newData[newData.length - 1]};
+        
+        // Random price movement between -0.03 and +0.03 rupees
+        const priceChange = (Math.random() * 0.06) - 0.03;
+        
+        // Update the close price
+        let newClose = lastCandle.y[3] + priceChange;
+        
+        // Ensure price stays between 0.10 and 1.00
+        newClose = Math.max(0.10, Math.min(1.00, newClose));
+        
+        // Update high/low if needed
+        const newHigh = Math.max(lastCandle.y[1], newClose);
+        const newLow = Math.min(lastCandle.y[2], newClose);
+        
+        // Update the candle
+        lastCandle.y = [
+          lastCandle.y[0], // Open stays the same
+          newHigh,
+          newLow,
+          parseFloat(newClose.toFixed(2))
+        ];
+        
+        newData[newData.length - 1] = lastCandle;
+        
+        setCoinChartSeries([{
+          data: newData
+        }]);
+      }
+    };
+    
+    // Update every 3-5 seconds
+    const interval = setInterval(() => {
+      updateCoinChart();
+    }, Math.random() * 2000 + 3000);
+    
+    return () => clearInterval(interval);
+  }, [coinChartSeries]);
+
+  // Random percentage change updater for investment cards
+  useEffect(() => {
+    const updatePercentages = () => {
+      // Generate random percentage between -2.99% to +2.99%
+      const randomInvestmentPercentage = (Math.random() * 6 - 3).toFixed(2);
+      const randomCryptoPercentage = (Math.random() * 8 - 4).toFixed(2); // Crypto is more volatile
+      
+      setInvestmentPercentageChange(parseFloat(randomInvestmentPercentage));
+      setCryptoPercentageChange(parseFloat(randomCryptoPercentage));
+    };
+
+    // Initial random values
+    updatePercentages();
+
+    // Update every 3-5 seconds randomly
+    const interval = setInterval(() => {
+      updatePercentages();
+    }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Generate random investment chart data
+  const generateInvestmentChartData = () => {
+    const dates = [];
+    const data = [];
+    const today = new Date();
+    
+    // Generate data for the last 30 days
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      
+      // Generate random value between 5000 and 15000
+      const baseValue = 5000 + Math.random() * 10000;
+      
+      // Add some trend to make it look realistic
+      const trendValue = i < 15 ? baseValue * (1 + (i * 0.01)) : baseValue * (1 + ((30 - i) * 0.01));
+      
+      data.push(parseFloat(trendValue.toFixed(2)));
+    }
+    
+    setInvestmentChartOptions({
+      ...investmentChartOptions,
+      xaxis: {
+        ...investmentChartOptions.xaxis,
+        categories: dates
+      }
+    });
+    
+    setInvestmentChartSeries([{
+      name: 'Investment Value',
+      data: data
+    }]);
+  };
+  
+  // Generate random candlestick data for MLM Coin
+  const generateCoinChartData = () => {
+    const data = [];
+    const today = new Date();
+    
+    // Generate data for the last 30 days
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      
+      // Random price between 0.10 (10 paisa) and 1.00 rupee
+      const basePrice = 0.10 + Math.random() * 0.90;
+      
+      // Generate OHLC data
+      const open = basePrice;
+      const high = open + (Math.random() * 0.05); // Up to 5 paisa higher
+      const low = Math.max(0.10, open - (Math.random() * 0.05)); // Up to 5 paisa lower but not below 10 paisa
+      const close = low + (Math.random() * (high - low)); // Random close between high and low
+      
+      data.push({
+        x: date.getTime(),
+        y: [
+          parseFloat(open.toFixed(2)),
+          parseFloat(high.toFixed(2)),
+          parseFloat(low.toFixed(2)),
+          parseFloat(close.toFixed(2))
+        ]
+      });
+    }
+    
+    setCoinChartSeries([{
+      data: data
+    }]);
+  };
+  
+  // Update display balances based on percentage changes
+  useEffect(() => {
+    if (userData?.investmentWallet?.balance && userData?.cryptoWallet?.balance) {
+      // Trigger animation state
+      setBalanceAnimating(true);
+      
+      // Calculate new balances
+      const baseInvestmentBalance = userData.investmentWallet.balance;
+      const investmentChangeAmount = baseInvestmentBalance * (investmentPercentageChange / 100);
+      
+      const baseCryptoBalance = userData.cryptoWallet.balance;
+      const cryptoChangeAmount = baseCryptoBalance * (cryptoPercentageChange / 100);
+      
+      // Add slight delay to make the change more noticeable after percentage changes
+      setTimeout(() => {
+        setDisplayInvestmentBalance(baseInvestmentBalance + investmentChangeAmount);
+        setDisplayCryptoBalance(baseCryptoBalance + cryptoChangeAmount);
+        
+        // Reset animation state after a short delay
+        setTimeout(() => {
+          setBalanceAnimating(false);
+        }, 400);
+      }, 200);
+    }
+  }, [investmentPercentageChange, cryptoPercentageChange, userData?.investmentWallet?.balance, userData?.cryptoWallet?.balance]);
 
   const handleLogout = () => {
     // Session is cleared by the parent component
@@ -795,20 +1145,20 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       let requestBody;
       if (paymentMethod === 'upi') {
         requestBody = {
-          amount: parseFloat(withdrawalAmount),
-          paymentMethod: 'upi',
-          upiId: upiId
+                amount: parseFloat(withdrawalAmount),
+                paymentMethod: 'upi',
+                upiId: upiId
         };
       } else if (paymentMethod === 'bank') {
         requestBody = {
-          amount: parseFloat(withdrawalAmount),
-          paymentMethod: 'bank',
-          bankDetails: {
-            accountNumber: accountNumber,
-            ifscCode: ifscCode,
-            accountHolderName: accountName,
-            bankName: bankName
-          }
+                amount: parseFloat(withdrawalAmount),
+                paymentMethod: 'bank',
+                bankDetails: {
+                  accountNumber: accountNumber,
+                  ifscCode: ifscCode,
+                  accountHolderName: accountName,
+                  bankName: bankName
+                }
         };
       } else if (paymentMethod === 'crypto') {
         requestBody = {
@@ -1192,6 +1542,178 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }
   };
 
+  // Handle investment click
+  const handleInvestmentClick = () => {
+    setShowInvestmentModal(true);
+    setSelectedInvestmentCurrency('');
+    setShowInvestmentPayment(false);
+    setInvestmentMessage({ type: '', text: '' });
+  };
+
+  // Handle investment currency selection
+  const handleInvestmentCurrencySelect = (currency: string) => {
+    setSelectedInvestmentCurrency(currency);
+    setShowInvestmentModal(false);
+    setShowInvestmentPayment(true);
+    setInvestmentPaymentID('');
+    setInvestmentPaymentImage(null);
+    setInvestmentPaymentImagePreview('');
+  };
+
+  // Handle investment image upload
+  const handleInvestmentImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setInvestmentPaymentImage(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setInvestmentPaymentImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Fetch investment wallet data
+  const fetchInvestmentWallet = async () => {
+    setIsLoadingInvestmentWallet(true);
+    setInvestmentWalletError('');
+    
+    try {
+      const token = getSessionToken();
+      if (!token) {
+        setInvestmentWalletError('Authentication token not found');
+        onLogout();
+        setIsLoadingInvestmentWallet(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:3111/api/investment/wallet', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+        setInvestmentWalletData(data.data);
+      } else {
+        setInvestmentWalletError(data.message || 'Failed to fetch investment wallet data');
+      }
+    } catch (err) {
+      setInvestmentWalletError('Network error. Please try again.');
+    } finally {
+      setIsLoadingInvestmentWallet(false);
+    }
+  };
+
+  // Fetch investment history data
+  const fetchInvestmentHistory = async () => {
+    setIsLoadingInvestmentHistory(true);
+    setInvestmentHistoryError('');
+    
+    try {
+      const token = getSessionToken();
+      if (!token) {
+        setInvestmentHistoryError('Authentication token not found');
+        onLogout();
+        setIsLoadingInvestmentHistory(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:3111/api/investment/history', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+        setInvestmentHistoryData(data.data);
+      } else {
+        setInvestmentHistoryError(data.message || 'Failed to fetch investment history');
+      }
+    } catch (err) {
+      setInvestmentHistoryError('Network error. Please try again.');
+    } finally {
+      setIsLoadingInvestmentHistory(false);
+    }
+  };
+
+  // Handle investment submission
+  const handleInvestmentSubmit = async () => {
+    if (!investmentPaymentID.trim()) {
+      setInvestmentMessage({ type: 'error', text: 'Please enter payment ID' });
+      return;
+    }
+
+    if (!investmentPaymentImage) {
+      setInvestmentMessage({ type: 'error', text: 'Please upload payment proof image' });
+      return;
+    }
+
+    setIsProcessingInvestment(true);
+    setInvestmentMessage({ type: '', text: '' });
+
+    try {
+      const token = getSessionToken();
+      if (!token) {
+        setInvestmentMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout();
+        setIsProcessingInvestment(false);
+        return;
+      }
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('amount', selectedInvestmentCurrency === 'inr' ? '5999' : '5999');
+      formData.append('currency', selectedInvestmentCurrency === 'inr' ? 'INR' : 'USDT');
+      formData.append('paymentId', investmentPaymentID);
+      formData.append('screenshot', investmentPaymentImage);
+      formData.append('investmentType', 'premium_plan');
+
+      const response = await fetch('http://localhost:3111/api/investment/recharge', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.status === 'success') {
+        setInvestmentMessage({ 
+          type: 'success', 
+          text: `🎉 Investment Request Submitted Successfully! 💰\n\nYour ${selectedInvestmentCurrency === 'inr' ? '₹5,999' : '5,999 USDT'} investment has been received and is being processed.\n\n✅ Payment ID: ${investmentPaymentID}\n⏰ Processing Time: 24-48 hours\n📧 You'll receive confirmation via email\n\nThank you for investing with us! 🚀` 
+        });
+        
+        // Reset form
+        setInvestmentPaymentID('');
+        setInvestmentPaymentImage(null);
+        setInvestmentPaymentImagePreview('');
+        
+        // Refresh user data to show updated investment info
+        fetchUserData();
+        
+        // Close modal after 5 seconds to give user time to read the message
+        setTimeout(() => {
+          setShowInvestmentPayment(false);
+          setInvestmentMessage({ type: '', text: '' });
+        }, 5000);
+      } else {
+        setInvestmentMessage({ type: 'error', text: data.message || 'Failed to submit investment request. Please try again.' });
+      }
+    } catch (err) {
+      setInvestmentMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsProcessingInvestment(false);
+    }
+  };
+
   // Handle profile update
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1501,18 +2023,118 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
                   </div>
                 </div>
-                {/* Activation Wallet */}
-                {/* <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center min-h-[110px]">
-                  <Wallet className="h-8 w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7]">Activation Wallet</div>
-                  <div className="text-lg font-bold text-[#1856a7]">USDT 0.00</div>
-                </div> */}
                 {/* Income Wallet */}
                 <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
                   <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
                   <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Income Wallet</div>
                   <div className="text-base sm:text-lg font-bold text-[#1856a7]">
                     ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
+                  </div>
+                </div>
+                {/* Investment Wallet */}
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center justify-center min-h-[100px] sm:min-h-[110px] relative">
+                  {/* Percentage Change Indicator */}
+                  <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                    investmentPercentageChange >= 0 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {investmentPercentageChange >= 0 ? (
+                      <span className="flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                        </svg>
+                        +{investmentPercentageChange.toFixed(2)}%
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        {investmentPercentageChange.toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                  
+                  <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Investment Wallet</div>
+                  <div className="flex flex-col items-center">
+                    <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
+                      investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
+                      <span>₹{displayInvestmentBalance !== null 
+                        ? displayInvestmentBalance.toFixed(2) 
+                        : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
+                      {investmentPercentageChange > 0 ? (
+                        <ArrowUp className="h-4 w-4 text-green-600" />
+                      ) : investmentPercentageChange < 0 ? (
+                        <ArrowDown className="h-4 w-4 text-red-600" />
+                      ) : null}
+                    </div>
+                    <div className={`text-xs font-medium ${
+                      investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
+                    </div>
+                  </div>
+                  {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
+                    <button
+                      onClick={handleInvestmentClick}
+                      className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Click to Invest
+                    </button>
+                  )}
+                </div>
+                {/* Crypto Wallet */}
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px] relative">
+                  {/* Percentage Change Indicator */}
+                  <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                    cryptoPercentageChange >= 0 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {cryptoPercentageChange >= 0 ? (
+                      <span className="flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                        </svg>
+                        +{cryptoPercentageChange.toFixed(2)}%
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        {cryptoPercentageChange.toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">₿</span>
+                  </div>
+                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Crypto Wallet</div>
+                  <div className="flex flex-col items-center">
+                    <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
+                      cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
+                      <span>
+                        {displayCryptoBalance !== null 
+                          ? displayCryptoBalance.toFixed(2) 
+                          : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} {userData?.cryptoWallet?.coin || 'MLMCoin'}
+                      </span>
+                      {cryptoPercentageChange > 0 ? (
+                        <ArrowUp className="h-4 w-4 text-green-600" />
+                      ) : cryptoPercentageChange < 0 ? (
+                        <ArrowDown className="h-4 w-4 text-red-600" />
+                      ) : null}
+                    </div>
+                    <div className={`text-xs font-medium ${
+                      cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
+                    </div>
                   </div>
                 </div>
                 {/* Total Withdraw */}
@@ -1525,59 +2147,392 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
               
-              {/* TPins Section */}
-              {userData?.tpins && userData.tpins.length > 0 && (
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Your TPins</h3>
-                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+              {/* Investment Performance Chart */}
+              <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Investment Performance</h3>
+                <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
+                  <ReactApexChart 
+                    options={investmentChartOptions}
+                    series={investmentChartSeries}
+                    type="area"
+                    height="100%"
+                    width="100%"
+                  />
+                </div>
+              </div>
+              
+              {/* MLM Coin Price Chart */}
+              <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">MLM Coin Price (Live)</h3>
+                <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
+                  <ReactApexChart 
+                    options={coinChartOptions}
+                    series={coinChartSeries}
+                    type="candlestick"
+                    height="100%"
+                    width="100%"
+                  />
+                </div>
+                <div className="mt-3 text-sm text-gray-500 flex flex-wrap items-center justify-center">
+                  {/* <span className="mr-1 sm:mr-2">Price fluctuates between</span>
+                  <span className="font-medium text-blue-600">₹0.10</span>
+                  <span className="mx-1">and</span>
+                  <span className="font-medium text-blue-600">₹1.00</span> */}
+                </div>
+              </div>
+            </>
+          ) : activeMenu === 'My Investment' ? (
+            /* My Investment Section */
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                <h1 className="text-2xl font-bold mb-2">My Investment</h1>
+                <p className="text-purple-100">Manage and track your investment portfolio</p>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex space-x-1 sm:space-x-4">
+                  <button
+                    onClick={() => setActiveInvestmentTab('wallet')}
+                    className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeInvestmentTab === 'wallet'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Investment Wallet
+                  </button>
+                  <button
+                    onClick={() => setActiveInvestmentTab('history')}
+                    className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeInvestmentTab === 'history'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Investment History
+                  </button>
+                </div>
+              </div>
+
+              {/* Investment Wallet Tab */}
+              {activeInvestmentTab === 'wallet' && (
+                <div className="space-y-6">
+                  {/* Loading State */}
+                  {isLoadingInvestmentWallet && (
+                    <div className="bg-white rounded-lg shadow p-8">
+                      <div className="flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+                        <span className="text-gray-600">Loading investment wallet...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {investmentWalletError && (
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <div className="text-center">
+                        <div className="text-red-500 mb-4">
+                          <BarChart3 className="h-12 w-12 mx-auto" />
+                        </div>
+                        <p className="text-red-600 mb-4">{investmentWalletError}</p>
+                        <button 
+                          onClick={fetchInvestmentWallet}
+                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Investment Wallet Data */}
+                  {investmentWalletData && !isLoadingInvestmentWallet && (
+                    <div className="space-y-6">
+                      {/* Wallet Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                          <div className="text-sm text-green-800 font-medium mb-1">Wallet Balance</div>
+                          <div className="text-2xl font-bold text-green-700">
+                            ₹{investmentWalletData.wallet?.balance?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                          <div className="text-sm text-blue-800 font-medium mb-1">Total Invested</div>
+                          <div className="text-2xl font-bold text-blue-700">
+                            ₹{investmentWalletData.wallet?.totalInvested?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 border border-purple-200">
+                          <div className="text-sm text-purple-800 font-medium mb-1">Total Returns</div>
+                          <div className="text-2xl font-bold text-purple-700">
+                            ₹{investmentWalletData.wallet?.totalReturns?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-4 border border-amber-200">
+                          <div className="text-sm text-amber-800 font-medium mb-1">Total Matured</div>
+                          <div className="text-2xl font-bold text-amber-700">
+                            ₹{investmentWalletData.wallet?.totalMatured?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Investment Opportunity */}
+                      {investmentWalletData.canInvest && (
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Investment Opportunity</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600">Investment Amount</div>
+                              <div className="text-xl font-bold text-blue-600">
+                                ₹{investmentWalletData.investmentAmount?.toLocaleString() || '0'}
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600">Expected Return</div>
+                              <div className="text-xl font-bold text-green-600">
+                                ₹{investmentWalletData.expectedReturn?.toLocaleString() || '0'}
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600">Investment Period</div>
+                              <div className="text-xl font-bold text-purple-600">
+                                {investmentWalletData.investmentPeriod || '0'} days
+                              </div>
+                            </div>
+                          </div>
+                          {investmentWalletData.wallet?.balance >= investmentWalletData.investmentAmount && (
+                            <div className="mt-4 text-center">
+                              {/* <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors">
+                                Start Investment
+                              </button> */}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Active Investment */}
+                      {investmentWalletData.activeInvestment && (
+                        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Active Investment</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <div className="text-sm text-gray-600">Amount Invested</div>
+                              <div className="text-lg font-bold text-blue-600">
+                                ₹{investmentWalletData.activeInvestment.amount?.toLocaleString() || '0'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-600">Expected Return</div>
+                              <div className="text-lg font-bold text-green-600">
+                                ₹{investmentWalletData.activeInvestment.expectedReturn?.toLocaleString() || '0'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-600">Days Remaining</div>
+                              <div className="text-lg font-bold text-purple-600">
+                                {investmentWalletData.activeInvestment.daysRemaining || '0'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pending Recharges */}
+                      {investmentWalletData.pendingRecharges && investmentWalletData.pendingRecharges.length > 0 && (
+                        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Pending Recharges</h3>
+                          <div className="space-y-3">
+                            {investmentWalletData.pendingRecharges.map((recharge: any, index: number) => (
+                              <div key={index} className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                  <div>
+                                    <div className="text-sm text-gray-600">Amount</div>
+                                    <div className="font-semibold">₹{recharge.amount?.toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-600">Payment ID</div>
+                                    <div className="font-semibold">{recharge.paymentId}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-600">Date</div>
+                                    <div className="font-semibold">{new Date(recharge.date).toLocaleDateString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-600">Status</div>
+                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                      Pending
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Investment History Tab */}
+              {activeInvestmentTab === 'history' && (
+                <div className="space-y-6">
+                  {/* Loading State */}
+                  {isLoadingInvestmentHistory && (
+                    <div className="bg-white rounded-lg shadow p-8">
+                      <div className="flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+                        <span className="text-gray-600">Loading investment history...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {investmentHistoryError && (
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <div className="text-center">
+                        <div className="text-red-500 mb-4">
+                          <BarChart3 className="h-12 w-12 mx-auto" />
+                        </div>
+                        <p className="text-red-600 mb-4">{investmentHistoryError}</p>
+                        <button 
+                          onClick={fetchInvestmentHistory}
+                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Investment History Data */}
+                  {investmentHistoryData && !isLoadingInvestmentHistory && (
+                    <div className="space-y-6">
+                      {/* Summary */}
+                      <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Investment Summary</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Total Investments</div>
+                            <div className="text-lg font-bold text-blue-600">
+                              {investmentHistoryData.summary?.totalInvestments || 0}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Total Invested</div>
+                            <div className="text-lg font-bold text-green-600">
+                              ₹{investmentHistoryData.summary?.totalInvested?.toLocaleString() || '0'}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Total Returns</div>
+                            <div className="text-lg font-bold text-purple-600">
+                              ₹{investmentHistoryData.summary?.totalReturns?.toLocaleString() || '0'}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Total Matured</div>
+                            <div className="text-lg font-bold text-amber-600">
+                              ₹{investmentHistoryData.summary?.totalMatured?.toLocaleString() || '0'}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Active</div>
+                            <div className="text-lg font-bold text-blue-600">
+                              {investmentHistoryData.summary?.activeInvestments || 0}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-gray-600">Matured</div>
+                            <div className="text-lg font-bold text-green-600">
+                              {investmentHistoryData.summary?.maturedInvestments || 0}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recharge History */}
+                      {investmentHistoryData.rechargeHistory && investmentHistoryData.rechargeHistory.length > 0 && (
+                        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recharge History</h3>
+                  <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Purchase Date</th>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Activation Date</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment ID</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Currency</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Approved Date</th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Screenshot</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {userData.tpins.map((tpin, index) => (
+                                {investmentHistoryData.rechargeHistory.map((recharge: any, index: number) => (
                           <tr key={index}>
-                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">{tpin.code}</td>
-                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      {recharge.paymentId}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      {recharge.amount?.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      {recharge.currency}
+                                    </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                tpin.isUsed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {tpin.isUsed ? 'Used' : 'Available'}
+                                        recharge.status === 'verified' 
+                                          ? 'bg-green-100 text-green-800'
+                                          : recharge.status === 'pending'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {recharge.status}
                               </span>
                             </td>
-                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
-                              {new Date(tpin.purchaseDate).toLocaleDateString()}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {new Date(recharge.date).toLocaleDateString()}
                             </td>
-                            <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden lg:table-cell">
-                              {tpin.activationDate ? new Date(tpin.activationDate).toLocaleDateString() : '-'}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {recharge.approvedAt ? new Date(recharge.approvedAt).toLocaleDateString() : '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      {recharge.screenshotUrl ? (
+                                        <a 
+                                          href={recharge.screenshotUrl} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-800 underline"
+                                        >
+                                          View
+                                        </a>
+                                      ) : '-'}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  {/* Mobile-only additional info */}
-                  <div className="block sm:hidden mt-3 space-y-2">
-                    {userData.tpins.map((tpin, index) => (
-                      <div key={index} className="bg-gray-50 rounded-lg p-3 text-xs">
-                        <div className="font-medium text-gray-900">{tpin.code}</div>
-                        <div className="text-gray-500 mt-1">
-                          Purchase: {new Date(tpin.purchaseDate).toLocaleDateString()}
-                        </div>
-                        <div className="text-gray-500">
-                          Activation: {tpin.activationDate ? new Date(tpin.activationDate).toLocaleDateString() : '-'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
-            </>
+
+                      {/* Empty State */}
+                      {(!investmentHistoryData.rechargeHistory || investmentHistoryData.rechargeHistory.length === 0) &&
+                       (!investmentHistoryData.investments || investmentHistoryData.investments.length === 0) && (
+                        <div className="text-center py-8">
+                          <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600">No investment history found.</p>
+                          <p className="text-sm text-gray-500 mt-2">Start investing to see your history here.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           ) : activeMenu === 'Generate TPin' ? (
             /* Generate TPin Section */
             <div className="space-y-4 sm:space-y-6">
@@ -1666,46 +2621,53 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <div className="bg-white rounded-lg shadow p-6">
                 {activeTpinCard === 'Get TPin' && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Your TPins</h3>
-                    {userData?.tpins && userData.tpins.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Date</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activation Date</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {userData.tpins.map((tpin, index) => (
-                              <tr key={index}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tpin.code}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    tpin.isUsed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {tpin.isUsed ? 'Used' : 'Available'}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {new Date(tpin.purchaseDate).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {tpin.activationDate ? new Date(tpin.activationDate).toLocaleDateString() : '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">MLM Coin Price Chart</h3>
+                    <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
+                      <ReactApexChart 
+                        options={coinChartOptions}
+                        series={coinChartSeries}
+                        type="candlestick"
+                        height="100%"
+                        width="100%"
+                      />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-600">
+                        MLM Coin price fluctuates between ₹0.10 (10 paisa) and ₹1.00 based on market demand.
+                      </p>
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="text-center bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-500">Current Price</div>
+                          <div className={`text-lg font-bold ${
+                            coinChartSeries[0]?.data?.length > 0 && 
+                            coinChartSeries[0].data[coinChartSeries[0].data.length - 1].y[3] > 
+                            coinChartSeries[0].data[coinChartSeries[0].data.length - 1].y[0] 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            ₹{coinChartSeries[0]?.data?.length > 0 
+                              ? coinChartSeries[0].data[coinChartSeries[0].data.length - 1].y[3].toFixed(2)
+                              : '0.00'}
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Hash className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No TPins found. Generate some TPins to get started.</p>
                       </div>
-                    )}
+                        <div className="text-center bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-500">24h High</div>
+                          <div className="text-lg font-bold text-green-600">
+                            ₹{coinChartSeries[0]?.data?.length > 0 
+                              ? Math.max(...coinChartSeries[0].data.slice(-24).map((item: any) => item.y[1])).toFixed(2)
+                              : '0.00'}
+                          </div>
+                        </div>
+                        <div className="text-center bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-500">24h Low</div>
+                          <div className="text-lg font-bold text-red-600">
+                            ₹{coinChartSeries[0]?.data?.length > 0 
+                              ? Math.min(...coinChartSeries[0].data.slice(-24).map((item: any) => item.y[2])).toFixed(2)
+                              : '0.00'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -4975,6 +5937,290 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Investment Selection Modal */}
+      {showInvestmentModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={() => setShowInvestmentModal(false)}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Select Investment Plan
+                      </h3>
+                      <button
+                        onClick={() => setShowInvestmentModal(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="text-center mb-6">
+                        <h4 className="text-xl font-bold text-gray-800 mb-2">Premium Investment Plan</h4>
+                        <p className="text-gray-600">Choose your preferred currency for investment</p>
+                      </div>
+
+                      {/* INR Option */}
+                      <div 
+                        onClick={() => handleInvestmentCurrencySelect('inr')}
+                        className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-gray-800">Indian Rupees</h5>
+                            <p className="text-sm text-gray-600">Pay with INR</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600">₹5,999</div>
+                            <div className="text-sm text-gray-500">Investment Amount</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* USDT Option */}
+                      <div 
+                        onClick={() => handleInvestmentCurrencySelect('usdt')}
+                        className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-gray-800">USDT (Crypto)</h5>
+                            <p className="text-sm text-gray-600">Pay with USDT</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-blue-600">5,999 USDT</div>
+                            <div className="text-sm text-gray-500">Investment Amount</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Investment Payment Modal */}
+      {showInvestmentPayment && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={() => setShowInvestmentPayment(false)}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="w-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Investment Payment - {selectedInvestmentCurrency === 'inr' ? '₹5,999' : '5,999 USDT'}
+                    </h3>
+                    <button
+                      onClick={() => setShowInvestmentPayment(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  {/* Payment Instructions */}
+                  <div className="space-y-6">
+                    {selectedInvestmentCurrency === 'inr' ? (
+                      <>
+                        {/* INR Payment Details */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-green-800 mb-3">Bank Transfer Details</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="font-medium">Account Name:</span>
+                              <span>MLM Investment Ltd</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">Account Number:</span>
+                              <span>1234567890123456</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">IFSC Code:</span>
+                              <span>SBIN0001234</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">Bank Name:</span>
+                              <span>State Bank of India</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">Amount:</span>
+                              <span className="font-bold text-green-600">₹5,999</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* QR Code for INR */}
+                        <div className="text-center">
+                          <h5 className="font-medium mb-3">UPI QR Code</h5>
+                          <div className="bg-gray-100 p-4 rounded-lg inline-block">
+                            <div className="w-48 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-4xl mb-2">📱</div>
+                                <div className="text-sm text-gray-600">UPI QR Code</div>
+                                <div className="text-xs text-gray-500 mt-1">Scan to pay ₹5,999</div>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-2">UPI ID: mlminvestment@paytm</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* USDT Payment Details */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-blue-800 mb-3">USDT Wallet Details</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="font-medium">Network:</span>
+                              <span>TRC20 (Tron)</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">Wallet Address:</span>
+                              <span className="font-mono text-xs">TYkJ8yJqGZhNP3v4d1KJf2k9mN8pQ1rW3x</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-medium">Amount:</span>
+                              <span className="font-bold text-blue-600">5,999 USDT</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* QR Code for USDT */}
+                        <div className="text-center">
+                          <h5 className="font-medium mb-3">USDT Wallet QR Code</h5>
+                          <div className="bg-gray-100 p-4 rounded-lg inline-block">
+                            <div className="w-48 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-4xl mb-2">₿</div>
+                                <div className="text-sm text-gray-600">USDT Wallet</div>
+                                <div className="text-xs text-gray-500 mt-1">Scan to send 5,999 USDT</div>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-2 font-mono">TYkJ8yJqGZhNP3v4d1KJf2k9mN8pQ1rW3x</p>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Payment Proof Upload */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Payment ID / Transaction ID
+                        </label>
+                        <input
+                          type="text"
+                          value={investmentPaymentID}
+                          onChange={(e) => setInvestmentPaymentID(e.target.value)}
+                          placeholder="Enter payment/transaction ID"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Upload Payment Screenshot
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleInvestmentImageUpload}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {investmentPaymentImagePreview && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                          <img 
+                            src={investmentPaymentImagePreview} 
+                            alt="Payment proof preview" 
+                            className="max-w-full h-32 object-cover rounded border"
+                          />
+                        </div>
+                      )}
+
+                      {investmentMessage.text && (
+                        <div className={`p-4 rounded-lg border ${
+                          investmentMessage.type === 'error' 
+                            ? 'bg-red-50 border-red-200 text-red-800' 
+                            : 'bg-green-50 border-green-200 text-green-800'
+                        }`}>
+                          <div className={`flex items-start ${investmentMessage.type === 'success' ? 'flex-col' : 'flex-row'}`}>
+                            {investmentMessage.type === 'success' ? (
+                              <div className="text-center w-full">
+                                <div className="text-2xl mb-2">🎉</div>
+                                <div className="font-semibold text-lg mb-2">Investment Submitted Successfully!</div>
+                                <div className="text-sm whitespace-pre-line leading-relaxed">
+                                  {investmentMessage.text.replace('🎉 Investment Request Submitted Successfully! 💰\n\n', '')}
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="text-xl mr-2">❌</div>
+                                <div className="text-sm">{investmentMessage.text}</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleInvestmentSubmit}
+                  disabled={isProcessingInvestment || investmentMessage.type === 'success'}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {isProcessingInvestment ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Submit Investment
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInvestmentPayment(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Back
                 </button>
               </div>
             </div>
