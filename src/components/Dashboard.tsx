@@ -54,6 +54,7 @@ const getSessionToken = () => {
 const sidebarMenu = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Activation Wallet', icon: Wallet },
+  { label: 'Generate TPin', icon: Lock },
   { label: 'Referral Link', icon: LinkIcon },
   { label: 'Income Wallet', icon: DollarSign },
   { label: 'My Investment', icon: BarChart3 },
