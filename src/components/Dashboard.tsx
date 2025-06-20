@@ -31,6 +31,7 @@ import {
   Lock,
   ArrowUp,
   ArrowDown,
+  ArrowLeftRight,
 } from 'lucide-react';
 import ReactApexChart from 'react-apexcharts';
 import { Link } from 'react-router-dom';
@@ -56,6 +57,7 @@ const sidebarMenu = [
   { label: 'Referral Link', icon: LinkIcon },
   { label: 'Income Wallet', icon: DollarSign },
   { label: 'My Investment', icon: BarChart3 },
+  { label: 'FFT Coin Transaction', icon: ArrowLeftRight },
   { label: 'Your Network', icon: Network },
   // { label: 'Update Name', icon: Edit },
   { label: 'Account Settings', icon: Settings },
@@ -253,6 +255,22 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [displayCryptoBalance, setDisplayCryptoBalance] = useState<number | null>(null);
   const [balanceAnimating, setBalanceAnimating] = useState(false);
   
+  // Crypto Buy/Sell states
+  const [showCryptoBuyModal, setShowCryptoBuyModal] = useState(false);
+  const [showCryptoSellModal, setShowCryptoSellModal] = useState(false);
+  const [cryptoBuyQuantity, setCryptoBuyQuantity] = useState('');
+  const [cryptoBuyCurrentCoinValue, setCryptoBuyCurrentCoinValue] = useState(0.10);
+  const [cryptoSellQuantity, setCryptoSellQuantity] = useState('');
+  const [cryptoSellCurrentCoinValue, setCryptoSellCurrentCoinValue] = useState(0.10);
+  const [isProcessingCryptoBuy, setIsProcessingCryptoBuy] = useState(false);
+  const [isProcessingCryptoSell, setIsProcessingCryptoSell] = useState(false);
+  const [cryptoTradeMessage, setCryptoTradeMessage] = useState({ type: '', text: '' });
+  
+  // Crypto Transactions states
+  const [cryptoTransactions, setCryptoTransactions] = useState<any>(null);
+  const [isLoadingCryptoTransactions, setIsLoadingCryptoTransactions] = useState(false);
+  const [cryptoTransactionsError, setCryptoTransactionsError] = useState('');
+  
   // Chart data for investment performance
   const [investmentChartOptions, setInvestmentChartOptions] = useState<any>({
     chart: {
@@ -347,7 +365,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       }
     },
     xaxis: {
-      type: 'datetime',
+      type: 'category',
       labels: {
         style: {
           colors: '#6B7280'
@@ -422,6 +440,13 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   useEffect(() => {
     if (activeMenu === 'Referral Link') {
       fetchReferralLinkData();
+    }
+  }, [activeMenu]);
+
+  // Fetch crypto transactions when FFT Coin Transaction section is active
+  useEffect(() => {
+    if (activeMenu === 'FFT Coin Transaction') {
+      fetchCryptoTransactions();
     }
   }, [activeMenu]);
 
@@ -533,12 +558,23 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Random percentage change updater for investment cards
   useEffect(() => {
     const updatePercentages = () => {
-      // Generate random percentage between -2.99% to +2.99%
-      const randomInvestmentPercentage = (Math.random() * 6 - 3).toFixed(2);
-      const randomCryptoPercentage = (Math.random() * 8 - 4).toFixed(2); // Crypto is more volatile
+      // Only update percentages if balances are greater than 0
+      const investmentBalance = userData?.investmentWallet?.balance || 0;
+      const cryptoBalance = userData?.cryptoWallet?.balance || 0;
       
-      setInvestmentPercentageChange(parseFloat(randomInvestmentPercentage));
-      setCryptoPercentageChange(parseFloat(randomCryptoPercentage));
+      if (investmentBalance > 0) {
+        const randomInvestmentPercentage = (Math.random() * 6 - 3).toFixed(2);
+        setInvestmentPercentageChange(parseFloat(randomInvestmentPercentage));
+      } else {
+        setInvestmentPercentageChange(0);
+      }
+      
+      if (cryptoBalance > 0) {
+        const randomCryptoPercentage = (Math.random() * 8 - 4).toFixed(2); // Crypto is more volatile
+        setCryptoPercentageChange(parseFloat(randomCryptoPercentage));
+      } else {
+        setCryptoPercentageChange(0);
+      }
     };
 
     // Initial random values
@@ -550,19 +586,16 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [userData?.investmentWallet?.balance, userData?.cryptoWallet?.balance]);
   
   // Generate random investment chart data
   const generateInvestmentChartData = () => {
-    const dates = [];
+    const categories = [];
     const data = [];
-    const today = new Date();
     
-    // Generate data for the last 30 days
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    // Generate data for 30 points without dates
+    for (let i = 1; i <= 30; i++) {
+      categories.push(i.toString());
       
       // Generate random value between 5000 and 15000
       const baseValue = 5000 + Math.random() * 10000;
@@ -577,7 +610,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       ...investmentChartOptions,
       xaxis: {
         ...investmentChartOptions.xaxis,
-        categories: dates
+        categories: categories
       }
     });
     
@@ -590,13 +623,9 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Generate random candlestick data for MLM Coin
   const generateCoinChartData = () => {
     const data = [];
-    const today = new Date();
     
-    // Generate data for the last 30 days
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      
+    // Generate data for 30 points without dates
+    for (let i = 1; i <= 30; i++) {
       // Random price between 0.10 (10 paisa) and 1.00 rupee
       const basePrice = 0.10 + Math.random() * 0.90;
       
@@ -607,7 +636,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       const close = low + (Math.random() * (high - low)); // Random close between high and low
       
       data.push({
-        x: date.getTime(),
+        x: i,
         y: [
           parseFloat(open.toFixed(2)),
           parseFloat(high.toFixed(2)),
@@ -1775,6 +1804,232 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }
   };
 
+  // Generate random coin value between 0.10 and 0.90 for buying
+  const generateRandomCoinValue = () => {
+    const min = 0.10;
+    const max = 0.90;
+    return Math.round((Math.random() * (max - min) + min) * 100) / 100;
+  };
+
+  // Generate random coin value between 0.10 and 0.50 for selling
+  const generateRandomSellCoinValue = () => {
+    const min = 0.10;
+    const max = 0.50;
+    return Math.round((Math.random() * (max - min) + min) * 100) / 100;
+  };
+
+  // Handle crypto buy
+  const handleCryptoBuy = () => {
+    setShowCryptoBuyModal(true);
+    setCryptoBuyQuantity('');
+    setCryptoBuyCurrentCoinValue(generateRandomCoinValue());
+    setCryptoTradeMessage({ type: '', text: '' });
+    
+    // Start coin value fluctuation
+    const interval = setInterval(() => {
+      setCryptoBuyCurrentCoinValue(generateRandomCoinValue());
+    }, 2000); // Update every 2 seconds
+    
+    // Store interval ID to clear it when modal closes
+    (window as any).coinValueInterval = interval;
+  };
+
+  // Handle crypto sell
+  const handleCryptoSell = () => {
+    setShowCryptoSellModal(true);
+    setCryptoSellQuantity('');
+    setCryptoSellCurrentCoinValue(generateRandomSellCoinValue());
+    setCryptoTradeMessage({ type: '', text: '' });
+    
+    // Start coin value fluctuation for sell
+    const sellInterval = setInterval(() => {
+      setCryptoSellCurrentCoinValue(generateRandomSellCoinValue());
+    }, 2000); // Update every 2 seconds
+    
+    // Store interval ID to clear it when modal closes
+    (window as any).coinSellValueInterval = sellInterval;
+  };
+
+  // Clear coin value interval when buy modal is closed
+  const handleCryptoBuyModalClose = () => {
+    setShowCryptoBuyModal(false);
+    if ((window as any).coinValueInterval) {
+      clearInterval((window as any).coinValueInterval);
+    }
+  };
+
+  // Clear coin value interval when sell modal is closed
+  const handleCryptoSellModalClose = () => {
+    setShowCryptoSellModal(false);
+    if ((window as any).coinSellValueInterval) {
+      clearInterval((window as any).coinSellValueInterval);
+    }
+  };
+
+  // Handle crypto buy submit
+  const handleCryptoBuySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!cryptoBuyQuantity) {
+      setCryptoTradeMessage({ type: 'error', text: 'Please enter the quantity.' });
+      return;
+    }
+
+    const quantity = parseInt(cryptoBuyQuantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      setCryptoTradeMessage({ type: 'error', text: 'Please enter a valid quantity.' });
+      return;
+    }
+
+    setIsProcessingCryptoBuy(true);
+    setCryptoTradeMessage({ type: '', text: '' });
+
+    try {
+      const token = getSessionToken();
+      if (!token) {
+        setCryptoTradeMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout();
+        setIsProcessingCryptoBuy(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:3111/api/crypto/purchase', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coinValue: cryptoBuyCurrentCoinValue,
+          quantity: quantity
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.status === 'success') {
+        setCryptoTradeMessage({ type: 'success', text: 'Crypto purchase successful! Coins have been added to your wallet.' });
+        setShowCryptoBuyModal(false);
+        
+        // Clear coin value interval
+        if ((window as any).coinValueInterval) {
+          clearInterval((window as any).coinValueInterval);
+        }
+        
+        fetchUserData(); // Refresh user data
+        
+        setTimeout(() => {
+          setCryptoTradeMessage({ type: '', text: '' });
+        }, 5000);
+      } else {
+        setCryptoTradeMessage({ type: 'error', text: data.message || 'Failed to purchase crypto. Please try again.' });
+      }
+    } catch (err) {
+      setCryptoTradeMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsProcessingCryptoBuy(false);
+    }
+  };
+
+  // Handle crypto sell submit
+  const handleCryptoSellSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!cryptoSellQuantity) {
+      setCryptoTradeMessage({ type: 'error', text: 'Please enter the quantity to sell.' });
+      return;
+    }
+
+    const quantity = parseInt(cryptoSellQuantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      setCryptoTradeMessage({ type: 'error', text: 'Please enter a valid quantity.' });
+      return;
+    }
+
+    const currentBalance = userData?.cryptoWallet?.balance || 0;
+    if (quantity > currentBalance) {
+      setCryptoTradeMessage({ type: 'error', text: 'Insufficient crypto balance.' });
+      return;
+    }
+
+    setIsProcessingCryptoSell(true);
+    setCryptoTradeMessage({ type: '', text: '' });
+
+    try {
+      const token = getSessionToken();
+      if (!token) {
+        setCryptoTradeMessage({ type: 'error', text: 'Authentication token not found' });
+        onLogout();
+        setIsProcessingCryptoSell(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:3111/api/crypto/sell', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coinValue: cryptoSellCurrentCoinValue,
+          quantity: quantity
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.status === 'success') {
+        setCryptoTradeMessage({ type: 'success', text: 'Crypto sold successfully! Amount has been credited to your income wallet.' });
+        setShowCryptoSellModal(false);
+        
+        // Clear coin value interval
+        if ((window as any).coinSellValueInterval) {
+          clearInterval((window as any).coinSellValueInterval);
+        }
+        
+        fetchUserData(); // Refresh user data
+        
+        setTimeout(() => {
+          setCryptoTradeMessage({ type: '', text: '' });
+        }, 5000);
+      } else {
+        setCryptoTradeMessage({ type: 'error', text: data.message || 'Failed to sell crypto. Please try again.' });
+      }
+    } catch (err) {
+      setCryptoTradeMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsProcessingCryptoSell(false);
+    }
+  };
+
+  const fetchCryptoTransactions = async () => {
+    setIsLoadingCryptoTransactions(true);
+    setCryptoTransactionsError('');
+    
+    try {
+      const token = getSessionToken();
+      const response = await fetch('http://localhost:3111/api/crypto/transactions', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.status === 'success') {
+        setCryptoTransactions(data.data);
+      } else {
+        setCryptoTransactionsError(data.message || 'Failed to fetch crypto transactions');
+      }
+    } catch (err) {
+      setCryptoTransactionsError('Network error. Please check your connection.');
+    } finally {
+      setIsLoadingCryptoTransactions(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -2033,49 +2288,54 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
                 {/* Investment Wallet */}
                 <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center justify-center min-h-[100px] sm:min-h-[110px] relative">
-                  {/* Percentage Change Indicator */}
-                  <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
-                    investmentPercentageChange >= 0 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {investmentPercentageChange >= 0 ? (
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                        </svg>
-                        +{investmentPercentageChange.toFixed(2)}%
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        {investmentPercentageChange.toFixed(2)}%
-                      </span>
-                    )}
-                  </div>
+                  {/* Percentage Change Indicator - Only show if balance > 0 */}
+                  {(userData?.investmentWallet?.balance || 0) > 0 && (
+                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                      investmentPercentageChange >= 0 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {investmentPercentageChange >= 0 ? (
+                        <span className="flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                          </svg>
+                          +{investmentPercentageChange.toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          {investmentPercentageChange.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
                   
                   <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
                   <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Investment Wallet</div>
                   <div className="flex flex-col items-center">
                     <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
-                      investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'text-green-600' : 
+                      (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'text-red-600' : 'text-[#1856a7]'
                     } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
                       <span>₹{displayInvestmentBalance !== null 
                         ? displayInvestmentBalance.toFixed(2) 
                         : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
-                      {investmentPercentageChange > 0 ? (
+                      {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
                         <ArrowUp className="h-4 w-4 text-green-600" />
-                      ) : investmentPercentageChange < 0 ? (
+                      ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
                         <ArrowDown className="h-4 w-4 text-red-600" />
                       ) : null}
                     </div>
-                    <div className={`text-xs font-medium ${
-                      investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
-                    </div>
+                    {(userData?.investmentWallet?.balance || 0) > 0 && (
+                      <div className={`text-xs font-medium ${
+                        investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
+                      </div>
+                    )}
                   </div>
                   {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
                     <button
@@ -2087,54 +2347,81 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   )}
                 </div>
                 {/* Crypto Wallet */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px] relative">
-                  {/* Percentage Change Indicator */}
-                  <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
-                    cryptoPercentageChange >= 0 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {cryptoPercentageChange >= 0 ? (
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                        </svg>
-                        +{cryptoPercentageChange.toFixed(2)}%
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        {cryptoPercentageChange.toFixed(2)}%
-                      </span>
-                    )}
-                  </div>
+                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[140px] sm:min-h-[150px] relative">
+                  {/* Percentage Change Indicator - Only show if balance > 0 */}
+                  {(userData?.cryptoWallet?.balance || 0) > 0 && (
+                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                      cryptoPercentageChange >= 0 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {cryptoPercentageChange >= 0 ? (
+                        <span className="flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                          </svg>
+                          +{cryptoPercentageChange.toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          {cryptoPercentageChange.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
                   
-                  <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">₿</span>
+                  <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 rounded-full flex items-center justify-center overflow-hidden">
+                    <img 
+                      src="/fftcoin.jpeg" 
+                      alt="FFT Coin" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Crypto Wallet</div>
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center mb-3">
                     <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
-                      cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'text-green-600' : 
+                      (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'text-red-600' : 'text-[#1856a7]'
                     } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
                       <span>
                         {displayCryptoBalance !== null 
                           ? displayCryptoBalance.toFixed(2) 
-                          : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} {userData?.cryptoWallet?.coin || 'MLMCoin'}
+                          : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT Coin
                       </span>
-                      {cryptoPercentageChange > 0 ? (
+                      {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
                         <ArrowUp className="h-4 w-4 text-green-600" />
-                      ) : cryptoPercentageChange < 0 ? (
+                      ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
                         <ArrowDown className="h-4 w-4 text-red-600" />
                       ) : null}
                     </div>
-                    <div className={`text-xs font-medium ${
-                      cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
-                    </div>
+                    {(userData?.cryptoWallet?.balance || 0) > 0 && (
+                      <div className={`text-xs font-medium ${
+                        cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Buy/Sell Buttons */}
+                  <div className="flex gap-2 w-full">
+                    <button
+                      onClick={handleCryptoBuy}
+                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                      className="flex-1 bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      Buy
+                    </button>
+                    <button
+                      onClick={handleCryptoSell}
+                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                      className="flex-1 bg-red-600 text-white px-2 py-1 text-xs rounded hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      Sell
+                    </button>
                   </div>
                 </div>
                 {/* Total Withdraw */}
@@ -2163,7 +2450,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               
               {/* MLM Coin Price Chart */}
               <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">MLM Coin Price (Live)</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">FFT Coin Price (Live)</h3>
                 <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
                   <ReactApexChart 
                     options={coinChartOptions}
@@ -4559,6 +4846,224 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
             </div>
+          ) : activeMenu === 'FFT Coin Transaction' ? (
+            /* FFT Coin Transaction Section */
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-lg p-6 border border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                      <ArrowLeftRight className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">FFT Coin Transactions</h3>
+                      <p className="text-gray-600">View your FFT Coin transaction history</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {isLoadingCryptoTransactions && (
+                      <div className="flex items-center text-green-600">
+                        <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Loading...
+                      </div>
+                    )}
+                    <button 
+                      onClick={fetchCryptoTransactions}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Handling */}
+              {cryptoTransactionsError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center mb-2">
+                    <X className="h-5 w-5 text-red-500 mr-2" />
+                    <span className="text-red-700 font-medium">Error Loading Transactions</span>
+                  </div>
+                  <p className="text-red-600 text-sm mb-3">{cryptoTransactionsError}</p>
+                  <button 
+                    onClick={fetchCryptoTransactions}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-sm"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Transaction Summary */}
+              {cryptoTransactions && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+                    Transaction Summary
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {cryptoTransactions.totalTransactions || 0}
+                      </div>
+                      <p className="text-sm text-gray-600">Total Transactions</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {cryptoTransactions.summary?.totalWalletTransactions || 0}
+                      </div>
+                      <p className="text-sm text-gray-600">Wallet Transactions</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {cryptoTransactions.summary?.totalCryptoRequests || 0}
+                      </div>
+                      <p className="text-sm text-gray-600">Crypto Requests</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {cryptoTransactions.summary?.pendingRequests || 0}
+                      </div>
+                      <p className="text-sm text-gray-600">Pending Requests</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction List */}
+              {cryptoTransactions ? (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                      Transaction History
+                    </h4>
+                    <div className="text-sm text-gray-500">
+                      {cryptoTransactions.transactions?.length || 0} transactions found
+                    </div>
+                  </div>
+                  
+                  {cryptoTransactions.transactions && cryptoTransactions.transactions.length > 0 ? (
+                    <div className="space-y-4">
+                      {cryptoTransactions.transactions.map((transaction: any, index: number) => (
+                        <div key={transaction._id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                                transaction.type === 'wallet_transaction' 
+                                  ? 'bg-blue-100' 
+                                  : transaction.transactionType === 'purchase' 
+                                    ? 'bg-green-100' 
+                                    : 'bg-red-100'
+                              }`}>
+                                {transaction.type === 'wallet_transaction' ? (
+                                  <Wallet className={`h-5 w-5 text-blue-600`} />
+                                ) : transaction.transactionType === 'purchase' ? (
+                                  <ArrowUp className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <ArrowDown className="h-5 w-5 text-red-600" />
+                                )}
+                              </div>
+                              <div>
+                                <h5 className="font-semibold text-gray-800">
+                                  {transaction.type === 'wallet_transaction' 
+                                    ? 'Wallet Transaction' 
+                                    : transaction.transactionType === 'purchase' 
+                                      ? 'FFT Coin Purchase' 
+                                      : 'FFT Coin Sale'
+                                  }
+                                </h5>
+                                <p className="text-sm text-gray-600">
+                                  {transaction.transactionType && transaction.transactionType !== 'activation_bonus' 
+                                    ? `${transaction.transactionType.charAt(0).toUpperCase() + transaction.transactionType.slice(1)} Request`
+                                    : transaction.transactionType === 'activation_bonus'
+                                      ? 'Activation Bonus'
+                                      : 'Transaction'
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-bold text-lg ${
+                                transaction.type === 'wallet_transaction' 
+                                  ? 'text-blue-600' 
+                                  : transaction.transactionType === 'purchase' 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                              }`}>
+                                {transaction.type === 'crypto_request' ? (
+                                  `₹${transaction.totalAmount || 0}`
+                                ) : (
+                                  `${transaction.amount || 0} FFT`
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {transaction.type === 'crypto_request' && transaction.coinValue ? (
+                                  `${transaction.quantity} coins @ ₹${transaction.coinValue}`
+                                ) : transaction.inrValue ? (
+                                  `₹${transaction.inrValue} INR Value`
+                                ) : ''}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">
+                                <span className="font-medium">Description:</span>
+                              </p>
+                              <p className="text-sm text-gray-800">{transaction.description || 'No description available'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">
+                                <span className="font-medium">Date:</span>
+                              </p>
+                              <p className="text-sm text-gray-800">
+                                {new Date(transaction.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {transaction.status && (
+                            <div className="flex items-center justify-between">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                transaction.status === 'completed' || transaction.status === 'approved'
+                                  ? 'bg-green-100 text-green-800'
+                                  : transaction.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                              }`}>
+                                {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                              </span>
+                              {transaction.updatedAt && transaction.updatedAt !== transaction.createdAt && (
+                                <div className="text-xs text-gray-500">
+                                  Updated: {new Date(transaction.updatedAt).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <ArrowLeftRight className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No transactions found</p>
+                      <p className="text-gray-500 text-sm mt-2">Your FFT Coin transaction history will appear here</p>
+                    </div>
+                  )}
+                </div>
+              ) : !isLoadingCryptoTransactions && !cryptoTransactionsError ? (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="text-center py-8">
+                    <ArrowLeftRight className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Click "Refresh" to load transaction data</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           ) : activeMenu === 'Account Settings' ? (
             /* Account Settings Section */
             <div className="space-y-6">
@@ -6223,6 +6728,323 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   Back
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Crypto Buy Modal */}
+      {showCryptoBuyModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={handleCryptoBuyModalClose}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <form onSubmit={handleCryptoBuySubmit}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                          <img 
+                            src="/crupto.png" 
+                            alt="FFT Coin" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        Buy Crypto
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCryptoBuyModalClose}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Current Coin Value Display */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
+                          <span className="w-3 h-3 bg-blue-600 rounded-full animate-pulse mr-2"></span>
+                          Live Coin Value
+                        </h4>
+                        <div className="flex items-center justify-between">
+                          <div className="text-2xl font-bold text-blue-700">
+                            ₹{cryptoBuyCurrentCoinValue.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-blue-600 flex items-center">
+                            <span className="animate-pulse mr-1">📈</span>
+                            Live Price
+                          </div>
+                        </div>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Price updates every 2 seconds
+                        </p>
+                      </div>
+
+                      {/* Quantity Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Quantity (Number of Coins)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={cryptoBuyQuantity}
+                          onChange={(e) => setCryptoBuyQuantity(e.target.value)}
+                          placeholder="Enter quantity of coins"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Minimum: 1 coin</p>
+                      </div>
+
+                      {/* Total Amount Calculation */}
+                      {cryptoBuyQuantity && parseInt(cryptoBuyQuantity) > 0 && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-yellow-800 mb-2">Purchase Summary</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Quantity:</span>
+                              <span className="font-medium">{cryptoBuyQuantity} coins</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Price per coin:</span>
+                              <span className="font-medium">₹{cryptoBuyCurrentCoinValue.toFixed(2)}</span>
+                            </div>
+                            <hr className="border-yellow-300" />
+                            <div className="flex justify-between font-bold text-yellow-800">
+                              <span>Total Amount:</span>
+                              <span>₹{(parseInt(cryptoBuyQuantity) * cryptoBuyCurrentCoinValue).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Purchase Instructions */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-green-800 mb-2">Purchase Instructions</h4>
+                        <div className="text-sm text-green-700 space-y-1">
+                          <p>• Enter the quantity of coins you want to purchase</p>
+                          <p>• Price will be calculated at current coin value</p>
+                          <p>• Coins will be credited instantly after purchase</p>
+                          <p>• Amount will be deducted from your income wallet</p>
+                        </div>
+                      </div>
+
+                      {cryptoTradeMessage.text && (
+                        <div className={`p-4 rounded-lg border ${
+                          cryptoTradeMessage.type === 'error' 
+                            ? 'bg-red-50 border-red-200 text-red-800' 
+                            : 'bg-green-50 border-green-200 text-green-800'
+                        }`}>
+                          <div className="flex items-start">
+                            <div className="text-xl mr-2">
+                              {cryptoTradeMessage.type === 'success' ? '✅' : '❌'}
+                            </div>
+                            <div className="text-sm">{cryptoTradeMessage.text}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    disabled={isProcessingCryptoBuy}
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                  >
+                    {isProcessingCryptoBuy ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      'Purchase Crypto'
+                    )}
+                  </button>
+                                      <button
+                      type="button"
+                      onClick={handleCryptoBuyModalClose}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      Cancel
+                    </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Crypto Sell Modal */}
+      {showCryptoSellModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={handleCryptoSellModalClose}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <form onSubmit={handleCryptoSellSubmit}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                          <img 
+                            src="/crupto.png" 
+                            alt="FFT Coin" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        Sell Crypto
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCryptoSellModalClose}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Current Coin Value Display */}
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-red-800 mb-2 flex items-center">
+                          <span className="w-3 h-3 bg-red-600 rounded-full animate-pulse mr-2"></span>
+                          Live Sell Price
+                        </h4>
+                        <div className="flex items-center justify-between">
+                          <div className="text-2xl font-bold text-red-700">
+                            ₹{cryptoSellCurrentCoinValue.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-red-600 flex items-center">
+                            <span className="animate-pulse mr-1">📉</span>
+                            Live Price
+                          </div>
+                        </div>
+                        <p className="text-xs text-red-600 mt-1">
+                          Price updates every 2 seconds
+                        </p>
+                      </div>
+
+                      {/* Current Balance Display */}
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-800 mb-2">Available Balance</h4>
+                        <div className="text-2xl font-bold text-yellow-700">
+                          {userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT Coin
+                        </div>
+                      </div>
+
+                      {/* Quantity Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Quantity (Number of Coins to Sell)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={userData?.cryptoWallet?.balance || 0}
+                          value={cryptoSellQuantity}
+                          onChange={(e) => setCryptoSellQuantity(e.target.value)}
+                          placeholder="Enter quantity of coins to sell"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Available: {userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT Coin
+                        </p>
+                      </div>
+
+                      {/* Total Amount Calculation */}
+                      {cryptoSellQuantity && parseInt(cryptoSellQuantity) > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-blue-800 mb-2">Sell Summary</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Quantity:</span>
+                              <span className="font-medium">{cryptoSellQuantity} coins</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Price per coin:</span>
+                              <span className="font-medium">₹{cryptoSellCurrentCoinValue.toFixed(2)}</span>
+                            </div>
+                            <hr className="border-blue-300" />
+                            <div className="flex justify-between font-bold text-blue-800">
+                              <span>Total Earnings:</span>
+                              <span>₹{(parseInt(cryptoSellQuantity) * cryptoSellCurrentCoinValue).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sell Instructions */}
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-red-800 mb-2">Sell Instructions</h4>
+                        <div className="text-sm text-red-700 space-y-1">
+                          <p>• Enter the quantity of coins you want to sell</p>
+                          <p>• Earnings will be calculated at current sell price</p>
+                          <p>• Coins will be deducted from your crypto wallet</p>
+                          <p>• INR amount will be credited to your income wallet instantly</p>
+                        </div>
+                      </div>
+
+                      {cryptoTradeMessage.text && (
+                        <div className={`p-4 rounded-lg border ${
+                          cryptoTradeMessage.type === 'error' 
+                            ? 'bg-red-50 border-red-200 text-red-800' 
+                            : 'bg-green-50 border-green-200 text-green-800'
+                        }`}>
+                          <div className="flex items-start">
+                            <div className="text-xl mr-2">
+                              {cryptoTradeMessage.type === 'success' ? '✅' : '❌'}
+                            </div>
+                            <div className="text-sm">{cryptoTradeMessage.text}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    disabled={isProcessingCryptoSell || !cryptoSellQuantity || parseInt(cryptoSellQuantity) <= 0}
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                  >
+                    {isProcessingCryptoSell ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      'Sell Crypto'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCryptoSellModalClose}
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
