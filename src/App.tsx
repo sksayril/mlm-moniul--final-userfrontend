@@ -4,7 +4,7 @@ import Login from './components/Login';
 import Registration from './components/Registration';
 import Dashboard from './components/Dashboard';
 
-// Session management utilities
+// Enhanced Session management utilities
 class SessionManager {
   private static SESSION_KEY = 'user_session';
   private static SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -57,8 +57,8 @@ class SessionManager {
     
     this.sessionTimer = setTimeout(() => {
       this.clearSession();
-      // Force reload to trigger authentication check
-      window.location.href = '/register';
+      // Force redirect to login when session expires
+      window.location.href = '/login';
     }, this.SESSION_TIMEOUT);
   }
 
@@ -68,9 +68,32 @@ class SessionManager {
       session.timestamp = Date.now();
       sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
       this.resetSessionTimer();
+      return true;
     }
+    return false;
+  }
+
+  // Check if current session is valid
+  static isValidSession(): boolean {
+    const session = this.getSession();
+    return session !== null && session.token && session.userData;
+  }
+
+  // Force logout and redirect to login
+  static forceLogout() {
+    this.clearSession();
+    window.location.href = '/login';
   }
 }
+
+// Global session validation function
+export const validateSession = (): boolean => {
+  if (!SessionManager.isValidSession()) {
+    SessionManager.forceLogout();
+    return false;
+  }
+  return true;
+};
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
@@ -84,7 +107,13 @@ function App() {
     }
     
     if (isAuthenticated) {
-      SessionManager.extendSession();
+      // Extend session on activity
+      const sessionExtended = SessionManager.extendSession();
+      if (!sessionExtended) {
+        // If session can't be extended, logout
+        handleLogout();
+        return;
+      }
       
       // Auto-logout after 30 minutes of inactivity
       activityTimer.current = setTimeout(() => {
@@ -93,23 +122,27 @@ function App() {
     }
   }, [isAuthenticated]);
 
-  // Handle logout
+  // Handle logout - always redirect to login
   const handleLogout = React.useCallback(() => {
     SessionManager.clearSession();
     setIsAuthenticated(false);
     if (activityTimer.current) {
       clearTimeout(activityTimer.current);
     }
-    // Force redirect to registration instead of login
-    window.location.href = '/register';
+    // Always redirect to login instead of register
+    window.location.href = '/login';
   }, []);
 
   // Check session on app load
   useEffect(() => {
     const session = SessionManager.getSession();
-    if (session) {
+    if (session && SessionManager.isValidSession()) {
       setIsAuthenticated(true);
       SessionManager.resetSessionTimer();
+    } else {
+      // Clear any invalid session data
+      SessionManager.clearSession();
+      setIsAuthenticated(false);
     }
     setIsLoading(false);
   }, []);
@@ -203,11 +236,18 @@ function App() {
             element={
               isAuthenticated ? 
               <Dashboard onLogout={handleLogout} /> : 
-              <Navigate to="/register" replace />
+              <Navigate to="/login" replace />
             } 
           />
-          {/* Any other route redirects to registration */}
-          <Route path="*" element={<Navigate to="/register" replace />} />
+          {/* Default route - redirect unauthenticated users to login instead of register */}
+          <Route 
+            path="*" 
+            element={
+              isAuthenticated ? 
+              <Navigate to="/dashboard" replace /> :
+              <Navigate to="/login" replace />
+            } 
+          />
         </Routes>
       </div>
     </Router>

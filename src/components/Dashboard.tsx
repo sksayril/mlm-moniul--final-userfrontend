@@ -36,17 +36,53 @@ import {
 import ReactApexChart from 'react-apexcharts';
 import { Link } from 'react-router-dom';
 
+// Import the session validation function from App.tsx
+import { validateSession } from '../App';
 
-// Utility function to get token from sessionStorage
+// Enhanced utility function to get token from sessionStorage with validation
 const getSessionToken = () => {
   try {
     const sessionData = sessionStorage.getItem('user_session');
     if (!sessionData) return null;
     const parsed = JSON.parse(sessionData);
+    
+    // Check if session is still valid
+    const now = Date.now();
+    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    
+    if (now - parsed.timestamp > SESSION_TIMEOUT) {
+      // Session expired, clear it
+      sessionStorage.removeItem('user_session');
+      return null;
+    }
+    
     return parsed.token;
   } catch {
+    // Invalid session data, clear it
+    sessionStorage.removeItem('user_session');
     return null;
   }
+};
+
+// Enhanced session check function
+const checkSessionAndRedirect = (onLogout: () => void) => {
+  const token = getSessionToken();
+  if (!token) {
+    // No valid token, trigger logout which will redirect to login
+    onLogout();
+    return false;
+  }
+  return true;
+};
+
+// Utility function to handle authentication errors from API responses
+const handleAuthError = (response: Response, onLogout: () => void) => {
+  if (response.status === 401 || response.status === 403) {
+    // Authentication/authorization error - session expired or invalid
+    onLogout();
+    return true;
+  }
+  return false;
 };
 
 // Replace all localStorage.getItem('token') with getSessionToken()
@@ -473,16 +509,23 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Fetch user data function
   const fetchUserData = async () => {
     setIsLoading(true);
+    
+    // Check session validity first
+    if (!checkSessionAndRedirect(onLogout)) {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const token = getSessionToken();
       if (!token) {
-        setError('Authentication token not found');
-        onLogout(); // Auto logout if no token
+        setError('Session expired. Please login again.');
+        onLogout();
         setIsLoading(false);
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+      const response = await fetch('http://localhost:3111/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -494,7 +537,13 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       if (response.ok && data.status === 'success') {
         setUserData(data.data.user);
       } else {
-        setError(data.message || 'Failed to fetch user data');
+        // Check if it's an authentication error
+        if (response.status === 401 || response.status === 403) {
+          setError('Session expired. Please login again.');
+          onLogout();
+        } else {
+          setError(data.message || 'Failed to fetch user data');
+        }
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -692,19 +741,24 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       return;
     }
 
+    // Check session validity first
+    if (!checkSessionAndRedirect(onLogout)) {
+      return;
+    }
+
     setIsUpdatingName(true);
     setNameUpdateMessage({ type: '', text: '' });
 
     try {
       const token = getSessionToken();
       if (!token) {
-        setNameUpdateMessage({ type: 'error', text: 'Authentication token not found' });
-        onLogout(); // Auto logout if no token
+        setNameUpdateMessage({ type: 'error', text: 'Session expired. Please login again.' });
+        onLogout();
         setIsUpdatingName(false);
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/updateMe', {
+      const response = await fetch('http://localhost:3111/api/auth/updateMe', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -794,11 +848,17 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setIsGeneratingTpin(true);
     setTpinMessage({ type: '', text: '' });
 
+    // Check session validity first
+    if (!checkSessionAndRedirect(onLogout)) {
+      setIsGeneratingTpin(false);
+      return;
+    }
+
     try {
       const token = getSessionToken();
       if (!token) {
-        setTpinMessage({ type: 'error', text: 'Authentication token not found' });
-        onLogout(); // Auto logout if no token
+        setTpinMessage({ type: 'error', text: 'Session expired. Please login again.' });
+        onLogout();
         setIsGeneratingTpin(false);
         return;
       }
@@ -811,7 +871,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('paymentId', paymentID);
       formData.append('screenshot', paymentImage);
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/purchase', {
+      const response = await fetch('http://localhost:3111/api/tpin/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -830,7 +890,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setPaymentImagePreview('');
         
         // Refresh user data
-        const updatedUserResponse = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+        const updatedUserResponse = await fetch('http://localhost:3111/api/auth/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -874,16 +934,22 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setIsLoadingReferrals(true);
     setReferralError('');
     
+    // Check session validity first
+    if (!checkSessionAndRedirect(onLogout)) {
+      setIsLoadingReferrals(false);
+      return;
+    }
+    
     try {
       const token = getSessionToken();
       if (!token) {
-        setReferralError('Authentication token not found');
-        onLogout(); // Auto logout if no token
+        setReferralError('Session expired. Please login again.');
+        onLogout();
         setIsLoadingReferrals(false);
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/direct', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/direct', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -922,7 +988,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/income', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/income', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -980,7 +1046,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/activate', {
+      const response = await fetch('http://localhost:3111/api/auth/activate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1024,7 +1090,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/dashboard', {
+      const response = await fetch('http://localhost:3111/api/mlm/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1060,7 +1126,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/matrix/structure', {
+      const response = await fetch('http://localhost:3111/api/mlm/matrix/structure', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1102,7 +1168,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/transfer', {
+      const response = await fetch('http://localhost:3111/api/tpin/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1203,7 +1269,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         };
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/request', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/request', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1252,7 +1318,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/approved/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/approved/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1282,7 +1348,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/pending/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/pending/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1312,7 +1378,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/rejected/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/rejected/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1364,7 +1430,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/link', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/link', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1400,7 +1466,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/payments', {
+      const response = await fetch('http://localhost:3111/api/tpin/payments', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1440,7 +1506,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/status', {
+      const response = await fetch('http://localhost:3111/api/tpin/status', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1492,7 +1558,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/change-password', {
+      const response = await fetch('http://localhost:3111/api/auth/account/change-password', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1538,7 +1604,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1618,7 +1684,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/wallet', {
+      const response = await fetch('http://localhost:3111/api/investment/wallet', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1653,7 +1719,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/history', {
+      const response = await fetch('http://localhost:3111/api/investment/history', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1706,7 +1772,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('screenshot', investmentPaymentImage);
       formData.append('investmentType', 'premium_plan');
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/recharge', {
+      const response = await fetch('http://localhost:3111/api/investment/recharge', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1773,7 +1839,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1895,7 +1961,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/purchase', {
+      const response = await fetch('http://localhost:3111/api/crypto/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1966,7 +2032,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/sell', {
+      const response = await fetch('http://localhost:3111/api/crypto/sell', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2010,7 +2076,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     
     try {
       const token = getSessionToken();
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/transactions', {
+      const response = await fetch('http://localhost:3111/api/crypto/transactions', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
