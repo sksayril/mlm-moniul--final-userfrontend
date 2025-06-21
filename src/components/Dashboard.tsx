@@ -124,6 +124,8 @@ interface UserData {
     totalEarnings: number;
     withdrawnAmount: number;
     lastUpdated: string;
+    dailyIncome?: number;
+    lastDailyIncome?: string;
   };
   investmentWallet?: {
     balance: number;
@@ -556,7 +558,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
       const data = await response.json();
       if (response.ok && data.status === 'success') {
-        setUserData(data.data.user);
+        // Set user data from the API response
+        setUserData({
+          ...data.data.user,
+          dailyIncomeStats: data.data.dailyIncomeStats,
+          matrixStats: data.data.matrixStats
+        });
       } else {
         // Check if it's an authentication error
         if (response.status === 401 || response.status === 403) {
@@ -2427,9 +2434,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
                     </div>
                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Daily Income</div>
-                    <div className="space-y-1 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                      ₹{userData?.dailyIncomeStats?.dailyIncomeAmount?.toFixed(2) || '0.00'}
+                    </div>
+                    <div className="mt-2 space-y-1 text-center">
                       <div className="text-xs sm:text-sm text-purple-100 font-medium">Total: <span className="text-white font-bold">₹{userData?.dailyIncomeStats?.totalDailyIncome?.toFixed(2) || '0.00'}</span></div>
-                      <div className="text-xs sm:text-sm text-purple-100 font-medium">Amount: <span className="text-white font-bold">₹{userData?.dailyIncomeStats?.dailyIncomeAmount?.toFixed(2) || '0.00'}</span></div>
+                      {/* <div className="text-xs sm:text-sm text-purple-100 font-medium">Last: <span className="text-white font-bold">{userData?.dailyIncomeStats?.lastDailyIncome ? new Date(userData.dailyIncomeStats.lastDailyIncome).toLocaleDateString() : 'N/A'}</span></div> */}
                     </div>
                   </div>
                 </div>
@@ -2452,7 +2462,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                        <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
                      </div>
                      <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Level Income</div>
-                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">₹0.00</div>
+                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">₹{userData?.incomeWallet?.selfIncome?.toFixed(2) || '0.00'}</div>
                    </div>
                  </div>
                  {/* Matrix Level Income */}
@@ -2464,7 +2474,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                      </div>
                      <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Matrix Level Income</div>
                      <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
-                       ₹{userData?.matrixStats?.totalMatrixIncome?.toFixed(2) || '0.00'}
+                       ₹{userData?.incomeWallet?.matrixIncome?.toFixed(2) || '0.00'}
                      </div>
                      {/* Matrix Progress Indicator */}
                      {userData?.matrixStats?.matrixLevels && userData.matrixStats.matrixLevels.length > 0 && (
