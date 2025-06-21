@@ -2477,7 +2477,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                        ₹{userData?.incomeWallet?.matrixIncome?.toFixed(2) || '0.00'}
                      </div>
                      {/* Matrix Progress Indicator */}
-                     {userData?.matrixStats?.matrixLevels && userData.matrixStats.matrixLevels.length > 0 && (
+                     {/* {userData?.matrixStats?.matrixLevels && userData.matrixStats.matrixLevels.length > 0 && (
                        <div className="mt-2 text-center">
                          <div className="text-xs text-white/80 font-medium">
                            Level {userData.matrixStats.matrixLevels[0].level}: {userData.matrixStats.matrixLevels[0].progress}
@@ -2486,7 +2486,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                            Next: ₹{userData.matrixStats.matrixLevels[0].nextReward}
                          </div>
                        </div>
-                     )}
+                     )} */}
                    </div>
                  </div>
                                  {/* Direct Bonus */}
