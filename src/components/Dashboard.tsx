@@ -186,6 +186,21 @@ interface UserData {
       membersNeeded: number;
     }>;
   };
+  rankStats?: {
+    currentRank: string;
+    directReferrals: number;
+    totalRankRewards: number;
+    nextRank?: {
+      rank: string;
+      requiredMembers: number;
+      reward: number;
+      description: string;
+      membersNeeded: number;
+      progress: string;
+      progressPercentage: string;
+    };
+    achievedRanks: any[];
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -331,6 +346,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [cryptoTransactions, setCryptoTransactions] = useState<any>(null);
   const [isLoadingCryptoTransactions, setIsLoadingCryptoTransactions] = useState(false);
   const [cryptoTransactionsError, setCryptoTransactionsError] = useState('');
+  const [showRankRewardsModal, setShowRankRewardsModal] = useState(false);
   
   // Chart data for investment performance
   const [investmentChartOptions, setInvestmentChartOptions] = useState<any>({
@@ -548,7 +564,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+      const response = await fetch('http://localhost:3111/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -558,19 +574,23 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
       const data = await response.json();
       if (response.ok && data.status === 'success') {
+        // Log the API response to debug
+        console.log('API Response:', data.data);
+        
         // Set user data from the API response
         setUserData({
           ...data.data.user,
           dailyIncomeStats: data.data.dailyIncomeStats,
-          matrixStats: data.data.matrixStats
+          matrixStats: data.data.matrixStats,
+          rankStats: data.data.rankRewardStats
         });
       } else {
         // Check if it's an authentication error
         if (response.status === 401 || response.status === 403) {
           setError('Session expired. Please login again.');
           onLogout();
-        } else {
-          setError(data.message || 'Failed to fetch user data');
+      } else {
+        setError(data.message || 'Failed to fetch user data');
         }
       }
     } catch (err) {
@@ -795,7 +815,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/updateMe', {
+      const response = await fetch('http://localhost:3111/api/auth/updateMe', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -908,7 +928,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('paymentId', paymentID);
       formData.append('screenshot', paymentImage);
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/purchase', {
+      const response = await fetch('http://localhost:3111/api/tpin/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -927,7 +947,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setPaymentImagePreview('');
         
         // Refresh user data
-        const updatedUserResponse = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+        const updatedUserResponse = await fetch('http://localhost:3111/api/auth/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -986,7 +1006,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/direct', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/direct', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1025,7 +1045,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/income', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/income', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1083,7 +1103,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/activate', {
+      const response = await fetch('http://localhost:3111/api/auth/activate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1127,7 +1147,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/dashboard', {
+      const response = await fetch('http://localhost:3111/api/mlm/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1163,7 +1183,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/matrix/structure', {
+      const response = await fetch('http://localhost:3111/api/mlm/matrix/structure', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1205,7 +1225,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/transfer', {
+      const response = await fetch('http://localhost:3111/api/tpin/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1306,7 +1326,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         };
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/request', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/request', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1355,7 +1375,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/approved/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/approved/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1385,7 +1405,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/pending/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/pending/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1415,7 +1435,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/rejected/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/rejected/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1467,7 +1487,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/link', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/link', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1503,7 +1523,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/payments', {
+      const response = await fetch('http://localhost:3111/api/tpin/payments', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1543,7 +1563,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/status', {
+      const response = await fetch('http://localhost:3111/api/tpin/status', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1595,7 +1615,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/change-password', {
+      const response = await fetch('http://localhost:3111/api/auth/account/change-password', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1641,7 +1661,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1721,7 +1741,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/wallet', {
+      const response = await fetch('http://localhost:3111/api/investment/wallet', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1756,7 +1776,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/history', {
+      const response = await fetch('http://localhost:3111/api/investment/history', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1809,7 +1829,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('screenshot', investmentPaymentImage);
       formData.append('investmentType', 'premium_plan');
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/recharge', {
+      const response = await fetch('http://localhost:3111/api/investment/recharge', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1876,7 +1896,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1998,7 +2018,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/purchase', {
+      const response = await fetch('http://localhost:3111/api/crypto/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2069,7 +2089,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/sell', {
+      const response = await fetch('http://localhost:3111/api/crypto/sell', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2113,7 +2133,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     
     try {
       const token = getSessionToken();
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/transactions', {
+      const response = await fetch('http://localhost:3111/api/crypto/transactions', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2396,7 +2416,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 mb-6">
                 {/* My Team */}
                 <div className="group relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-blue-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
@@ -2435,13 +2455,73 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </div>
                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Daily Income</div>
                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
-                      ₹{userData?.dailyIncomeStats?.dailyIncomeAmount?.toFixed(2) || '0.00'}
+                      ₹{userData?.incomeWallet?.dailyIncome?.toFixed(2) || '0.00'}
                     </div>
                     <div className="mt-2 space-y-1 text-center">
-                      <div className="text-xs sm:text-sm text-purple-100 font-medium">Total: <span className="text-white font-bold">₹{userData?.dailyIncomeStats?.totalDailyIncome?.toFixed(2) || '0.00'}</span></div>
-                      {/* <div className="text-xs sm:text-sm text-purple-100 font-medium">Last: <span className="text-white font-bold">{userData?.dailyIncomeStats?.lastDailyIncome ? new Date(userData.dailyIncomeStats.lastDailyIncome).toLocaleDateString() : 'N/A'}</span></div> */}
+                      <div className="text-xs sm:text-sm text-purple-100 font-medium">Balance: <span className="text-white font-bold">₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}</span></div>
                     </div>
                   </div>
+                </div>
+                {/* Daily Team Income */}
+                <div className="group relative bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-teal-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                    </div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Daily Team Income</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                      ₹{userData?.incomeWallet?.dailyTeamIncome?.toFixed(2) || '0.00'}
+                    </div>
+                    <div className="mt-2 space-y-1 text-center">
+                      <div className="text-xs sm:text-sm text-teal-100 font-medium">Total Earnings: <span className="text-white font-bold">₹{userData?.incomeWallet?.totalEarnings?.toFixed(2) || '0.00'}</span></div>
+                    </div>
+                  </div>
+                </div>
+                {/* Rank Rewards */}
+                <div className="group relative bg-gradient-to-br from-amber-600 via-yellow-700 to-orange-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[160px] sm:min-h-[180px] border border-amber-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <svg className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Rank Rewards</div>
+                    <div className="text-xl sm:text-2xl font-bold text-white drop-shadow-sm mb-2">
+                      ₹{userData?.incomeWallet?.rankRewards?.toFixed(2) || '0.00'}
+                    </div>
+                    <div className="w-full space-y-2 text-center">
+                      <div className="text-xs sm:text-sm text-amber-100 font-medium">
+                        Current: <span className="text-white font-bold">{userData?.rankStats?.currentRank || userData?.rank || 'Newcomer'}</span>
+                      </div>
+                      {userData?.rankStats?.nextRank && (
+                        <>
+                          <div className="text-xs sm:text-sm text-amber-100 font-medium">
+                            Next: <span className="text-white font-bold">{userData.rankStats.nextRank.rank}</span>
+                          </div>
+                          <div className="w-full bg-white/20 rounded-full h-2 mt-2">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500 shadow-lg" 
+                              style={{ width: `${parseFloat(userData.rankStats.nextRank.progressPercentage) || 0}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-amber-100">
+                            {userData.rankStats.nextRank.progress} ({userData.rankStats.nextRank.progressPercentage}%)
+                          </div>
+                                                     <div className="text-xs text-amber-100 font-medium">
+                             Reward: <span className="text-white font-bold">₹{userData.rankStats.nextRank.reward}</span>
+                           </div>
+                         </>
+                       )}
+                       <button
+                         onClick={() => setShowRankRewardsModal(true)}
+                         className="mt-3 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                       >
+                         View More
+                       </button>
+                     </div>
+                   </div>
                 </div>
                 {/* My Single Leg Team */}
                 {/* <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px] sm:col-span-2 lg:col-span-1">
@@ -2449,19 +2529,18 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="font-semibold text-sm sm:text-base text-center">My Single Leg Team</div>
                   <div className="text-xs mt-1 text-center">Active(12 USDT) : 0</div>
                   <div className="text-xs text-center">Active(24 USDT) : 0</div>
-                  <div className="text-xs text-center">Active(48 USDT) : 0</div>
                   <div className="text-xs text-center">Active(96 USDT) : 0</div>
                   <div className="text-xs text-center">Active(192 USDT) : 0</div>
                   <div className="text-xs text-center">Inactive : 0</div>
                 </div> */}
-                                 {/* Level Income */}
+                {/* Level Income */}
                  <div className="group relative bg-gradient-to-br from-cyan-600 via-cyan-700 to-blue-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-cyan-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
                    <div className="relative z-10 w-full flex flex-col items-center">
                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
                        <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
                      </div>
-                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Level Income</div>
+                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Self Income</div>
                      <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">₹{userData?.incomeWallet?.selfIncome?.toFixed(2) || '0.00'}</div>
                    </div>
                  </div>
@@ -2488,8 +2567,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                        </div>
                      )} */}
                    </div>
-                 </div>
-                                 {/* Direct Bonus */}
+                </div>
+                {/* Direct Bonus */}
                  <div className="group relative bg-gradient-to-br from-rose-600 via-pink-700 to-red-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-rose-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
                    <div className="relative z-10 w-full flex flex-col items-center">
@@ -2498,11 +2577,11 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                      </div>
                      <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Direct Bonus</div>
                      <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
-                       ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
+                    ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
                      </div>
-                   </div>
-                 </div>
-                                 {/* Income Wallet */}
+                  </div>
+                </div>
+                {/* Income Wallet */}
                  <div className="group relative bg-gradient-to-br from-violet-600 via-violet-700 to-purple-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-violet-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
                    <div className="relative z-10 w-full flex flex-col items-center">
@@ -2511,10 +2590,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                      </div>
                      <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Income Wallet</div>
                      <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
-                       ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
+                    ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
                      </div>
-                   </div>
-                 </div>
+                  </div>
+                </div>
                 {/* Investment Wallet */}
                 <div className="group relative bg-gradient-to-br from-orange-600 via-amber-700 to-yellow-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px] border border-orange-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
@@ -2549,36 +2628,36 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
                     </div>
                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Investment Wallet</div>
-                    <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center">
                       <div className={`text-2xl sm:text-3xl font-bold mb-1 transition-all duration-300 ${
                         (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'text-green-300' : 
                         (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'text-red-300' : 'text-white'
                       } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 drop-shadow-sm`}>
-                        <span>₹{displayInvestmentBalance !== null 
-                          ? displayInvestmentBalance.toFixed(2) 
-                          : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
-                        {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
+                      <span>₹{displayInvestmentBalance !== null 
+                        ? displayInvestmentBalance.toFixed(2) 
+                        : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
+                      {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
                           <ArrowUp className="h-5 w-5 text-green-300" />
-                        ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
+                      ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
                           <ArrowDown className="h-5 w-5 text-red-300" />
-                        ) : null}
-                      </div>
-                      {(userData?.investmentWallet?.balance || 0) > 0 && (
+                      ) : null}
+                    </div>
+                    {(userData?.investmentWallet?.balance || 0) > 0 && (
                         <div className={`text-sm font-bold ${
                           investmentPercentageChange >= 0 ? 'text-green-300' : 'text-red-300'
-                        }`}>
-                          {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
-                        </div>
-                      )}
-                    </div>
-                    {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
-                      <button
-                        onClick={handleInvestmentClick}
-                        className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      >
-                        Click to Invest
-                      </button>
+                      }`}>
+                        {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
+                      </div>
                     )}
+                  </div>
+                  {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
+                    <button
+                      onClick={handleInvestmentClick}
+                        className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      Click to Invest
+                    </button>
+                  )}
                   </div>
                 </div>
                 {/* Crypto Wallet */}
@@ -2613,12 +2692,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="relative z-10 w-full flex flex-col items-center">
                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300 ring-4 ring-white/20">
                       <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 rounded-full flex items-center justify-center overflow-hidden bg-white">
-                        <img 
-                          src="/fftcoin.jpeg" 
+                    <img 
+                      src="/fftcoin.jpeg" 
                           alt="FLT Coin" 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                     </div>
                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Crypto Wallet</div>
                     <div className="flex flex-col items-center mb-4">
@@ -2626,45 +2705,45 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'text-green-300' : 
                         (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'text-red-300' : 'text-white'
                       } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 text-center drop-shadow-sm`}>
-                        <span>
-                          {displayCryptoBalance !== null 
-                            ? displayCryptoBalance.toFixed(2) 
+                      <span>
+                        {displayCryptoBalance !== null 
+                          ? displayCryptoBalance.toFixed(2) 
                             : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FLT Coin
-                        </span>
-                        {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
+                      </span>
+                      {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
                           <ArrowUp className="h-5 w-5 text-green-300" />
-                        ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
+                      ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
                           <ArrowDown className="h-5 w-5 text-red-300" />
-                        ) : null}
-                      </div>
-                      {(userData?.cryptoWallet?.balance || 0) > 0 && (
+                      ) : null}
+                    </div>
+                    {(userData?.cryptoWallet?.balance || 0) > 0 && (
                         <div className={`text-sm font-bold ${
                           cryptoPercentageChange >= 0 ? 'text-green-300' : 'text-red-300'
-                        }`}>
-                          {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Buy/Sell Buttons */}
+                      }`}>
+                        {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Buy/Sell Buttons */}
                     <div className="flex gap-3 w-full">
-                      <button
-                        onClick={handleCryptoBuy}
-                        disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                    <button
+                      onClick={handleCryptoBuy}
+                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
                         className="flex-1 bg-white/20 backdrop-blur-sm text-white px-3 py-2 text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none border border-green-300/30"
-                      >
-                        Buy
-                      </button>
-                      <button
-                        onClick={handleCryptoSell}
-                        disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                    >
+                      Buy
+                    </button>
+                    <button
+                      onClick={handleCryptoSell}
+                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
                         className="flex-1 bg-white/20 backdrop-blur-sm text-white px-3 py-2 text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none border border-red-300/30"
-                      >
-                        Sell
-                      </button>
-                    </div>
+                    >
+                      Sell
+                    </button>
                   </div>
                 </div>
+                  </div>
 
               </div>
               
@@ -7287,6 +7366,172 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rank Rewards Modal */}
+      {showRankRewardsModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={() => setShowRankRewardsModal(false)}
+            ></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+              <div className="bg-gradient-to-br from-amber-600 via-yellow-700 to-orange-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl leading-6 font-bold text-white flex items-center">
+                    <svg className="h-8 w-8 text-white mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" />
+                    </svg>
+                    Rank Rewards Details
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowRankRewardsModal(false)}
+                    className="text-white hover:text-amber-200 transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Current Status */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <h4 className="font-bold text-lg text-white mb-3 flex items-center">
+                      <span className="w-3 h-3 bg-green-400 rounded-full mr-2"></span>
+                      Current Status
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="text-amber-100 text-sm">Current Rank</div>
+                        <div className="text-white font-bold text-lg">
+                          {userData?.rankStats?.currentRank || userData?.rank || 'Newcomer'}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-amber-100 text-sm">Direct Referrals</div>
+                        <div className="text-white font-bold text-lg">
+                          {userData?.rankStats?.directReferrals || 0}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-amber-100 text-sm">Total Rank Rewards</div>
+                        <div className="text-white font-bold text-lg">
+                          ₹{userData?.rankStats?.totalRankRewards?.toFixed(2) || userData?.incomeWallet?.rankRewards?.toFixed(2) || '0.00'}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-amber-100 text-sm">Achieved Ranks</div>
+                        <div className="text-white font-bold text-lg">
+                          {userData?.rankStats?.achievedRanks?.length || 0}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                                     {/* Next Rank Progress */}
+                   {(userData?.rankStats?.nextRank || userData?.rankStats) && (
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                      <h4 className="font-bold text-lg text-white mb-3 flex items-center">
+                        <span className="w-3 h-3 bg-blue-400 rounded-full animate-pulse mr-2"></span>
+                        Next Rank Progress
+                      </h4>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                                                     <div>
+                             <div className="text-amber-100 text-sm">Next Rank</div>
+                             <div className="text-white font-bold text-xl">
+                               {userData?.rankStats?.nextRank?.rank || 'BRONZE'}
+                             </div>
+                           </div>
+                           <div className="text-right">
+                             <div className="text-amber-100 text-sm">Reward</div>
+                             <div className="text-white font-bold text-xl">
+                               ₹{userData?.rankStats?.nextRank?.reward || 500}
+                             </div>
+                           </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-amber-100">Progress</span>
+                                                         <span className="text-white font-medium">
+                               {userData?.rankStats?.nextRank?.progress || '5/25'} ({userData?.rankStats?.nextRank?.progressPercentage || '20.0'}%)
+                             </span>
+                           </div>
+                           <div className="w-full bg-white/20 rounded-full h-3">
+                             <div 
+                               className="bg-gradient-to-r from-green-400 via-green-500 to-green-600 h-3 rounded-full transition-all duration-1000 shadow-lg"
+                               style={{ width: `${parseFloat(userData?.rankStats?.nextRank?.progressPercentage || '20.0') || 0}%` }}
+                             ></div>
+                           </div>
+                         </div>
+ 
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                           <div className="space-y-2">
+                             <div className="text-amber-100 text-sm">Required Members</div>
+                             <div className="text-white font-bold">
+                               {userData?.rankStats?.nextRank?.requiredMembers || 25}
+                             </div>
+                           </div>
+                           <div className="space-y-2">
+                             <div className="text-amber-100 text-sm">Members Needed</div>
+                             <div className="text-white font-bold">
+                               {userData?.rankStats?.nextRank?.membersNeeded || 20}
+                             </div>
+                           </div>
+                         </div>
+
+                         <div className="bg-white/10 rounded-lg p-3 mt-4">
+                           <div className="text-amber-100 text-sm mb-1">Description</div>
+                           <div className="text-white font-medium">
+                             {userData?.rankStats?.nextRank?.description || '₹500 + ID Card'}
+                           </div>
+                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Achieved Ranks */}
+                  {userData?.rankStats?.achievedRanks && userData.rankStats.achievedRanks.length > 0 && (
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                      <h4 className="font-bold text-lg text-white mb-3 flex items-center">
+                        <span className="w-3 h-3 bg-green-400 rounded-full mr-2"></span>
+                        Achieved Ranks
+                      </h4>
+                      <div className="space-y-2">
+                        {userData.rankStats.achievedRanks.map((rank: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center bg-white/5 rounded-lg p-3">
+                            <div>
+                              <div className="text-white font-medium">{rank.rank}</div>
+                              <div className="text-amber-100 text-sm">{rank.achievedDate}</div>
+                            </div>
+                            <div className="text-white font-bold">
+                              ₹{rank.reward}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={() => setShowRankRewardsModal(false)}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-300"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
