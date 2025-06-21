@@ -2419,46 +2419,46 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="text-xs text-center">Active(192 USDT) : 0</div>
                   <div className="text-xs text-center">Inactive : 0</div>
                 </div> */}
-                {/* Level Income */}
-                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-blue-300 hover:scale-105 hover:-translate-y-1">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10 w-full flex flex-col items-center">
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                      <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
-                    </div>
-                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Level Income</div>
-                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">₹0.00</div>
-                  </div>
-                </div>
-                {/* Direct Bonus */}
-                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-emerald-300 hover:scale-105 hover:-translate-y-1">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10 w-full flex flex-col items-center">
-                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                      <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
-                    </div>
-                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Direct Bonus</div>
-                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                      ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
-                    </div>
-                  </div>
-                </div>
-                {/* Income Wallet */}
-                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-purple-300 hover:scale-105 hover:-translate-y-1">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10 w-full flex flex-col items-center">
-                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                      <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
-                    </div>
-                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Income Wallet</div>
-                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                      ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
-                    </div>
-                  </div>
-                </div>
+                                 {/* Level Income */}
+                 <div className="group relative bg-gradient-to-br from-cyan-600 via-cyan-700 to-blue-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-cyan-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                   <div className="relative z-10 w-full flex flex-col items-center">
+                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                       <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                     </div>
+                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Level Income</div>
+                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">₹0.00</div>
+                   </div>
+                 </div>
+                                 {/* Direct Bonus */}
+                 <div className="group relative bg-gradient-to-br from-rose-600 via-pink-700 to-red-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-rose-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                   <div className="relative z-10 w-full flex flex-col items-center">
+                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                       <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                     </div>
+                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Direct Bonus</div>
+                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                       ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
+                     </div>
+                   </div>
+                 </div>
+                                 {/* Income Wallet */}
+                 <div className="group relative bg-gradient-to-br from-violet-600 via-violet-700 to-purple-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-violet-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                   <div className="relative z-10 w-full flex flex-col items-center">
+                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                       <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                     </div>
+                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Income Wallet</div>
+                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                       ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
+                     </div>
+                   </div>
+                 </div>
                 {/* Investment Wallet */}
-                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-orange-300 hover:scale-105 hover:-translate-y-1">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="group relative bg-gradient-to-br from-orange-600 via-amber-700 to-yellow-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px] border border-orange-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
                   
                   {/* Percentage Change Indicator - Only show if balance > 0 */}
                   {(userData?.investmentWallet?.balance || 0) > 0 && (
@@ -2486,27 +2486,27 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   )}
                   
                   <div className="relative z-10 w-full flex flex-col items-center">
-                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                      <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
                     </div>
-                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Investment Wallet</div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Investment Wallet</div>
                     <div className="flex flex-col items-center">
                       <div className={`text-2xl sm:text-3xl font-bold mb-1 transition-all duration-300 ${
-                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent' : 
-                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent' : 'bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent'
-                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
+                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'text-green-300' : 
+                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'text-red-300' : 'text-white'
+                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 drop-shadow-sm`}>
                         <span>₹{displayInvestmentBalance !== null 
                           ? displayInvestmentBalance.toFixed(2) 
                           : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
                         {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
-                          <ArrowUp className="h-5 w-5 text-green-600" />
+                          <ArrowUp className="h-5 w-5 text-green-300" />
                         ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
-                          <ArrowDown className="h-5 w-5 text-red-600" />
+                          <ArrowDown className="h-5 w-5 text-red-300" />
                         ) : null}
                       </div>
                       {(userData?.investmentWallet?.balance || 0) > 0 && (
                         <div className={`text-sm font-bold ${
-                          investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                          investmentPercentageChange >= 0 ? 'text-green-300' : 'text-red-300'
                         }`}>
                           {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
                         </div>
@@ -2515,7 +2515,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
                       <button
                         onClick={handleInvestmentClick}
-                        className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                       >
                         Click to Invest
                       </button>
@@ -2523,8 +2523,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   </div>
                 </div>
                 {/* Crypto Wallet */}
-                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[160px] sm:min-h-[180px] border border-gray-200 hover:border-yellow-300 hover:scale-105 hover:-translate-y-1">
-                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="group relative bg-gradient-to-br from-yellow-600 via-amber-700 to-orange-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[160px] sm:min-h-[180px] border border-yellow-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
                   
                   {/* Percentage Change Indicator - Only show if balance > 0 */}
                   {(userData?.cryptoWallet?.balance || 0) > 0 && (
@@ -2552,7 +2552,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   )}
                   
                   <div className="relative z-10 w-full flex flex-col items-center">
-                    <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300 ring-4 ring-yellow-200/50">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300 ring-4 ring-white/20">
                       <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 rounded-full flex items-center justify-center overflow-hidden bg-white">
                         <img 
                           src="/fftcoin.jpeg" 
@@ -2561,26 +2561,26 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         />
                       </div>
                     </div>
-                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Crypto Wallet</div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Crypto Wallet</div>
                     <div className="flex flex-col items-center mb-4">
                       <div className={`text-xl sm:text-2xl font-bold mb-1 transition-all duration-300 ${
-                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent' : 
-                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent' : 'bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent'
-                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 text-center`}>
+                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'text-green-300' : 
+                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'text-red-300' : 'text-white'
+                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 text-center drop-shadow-sm`}>
                         <span>
                           {displayCryptoBalance !== null 
                             ? displayCryptoBalance.toFixed(2) 
                             : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FLT
                         </span>
                         {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
-                          <ArrowUp className="h-5 w-5 text-green-600" />
+                          <ArrowUp className="h-5 w-5 text-green-300" />
                         ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
-                          <ArrowDown className="h-5 w-5 text-red-600" />
+                          <ArrowDown className="h-5 w-5 text-red-300" />
                         ) : null}
                       </div>
                       {(userData?.cryptoWallet?.balance || 0) > 0 && (
                         <div className={`text-sm font-bold ${
-                          cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                          cryptoPercentageChange >= 0 ? 'text-green-300' : 'text-red-300'
                         }`}>
                           {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
                         </div>
@@ -2592,14 +2592,14 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <button
                         onClick={handleCryptoBuy}
                         disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-2 text-sm font-bold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                        className="flex-1 bg-white/20 backdrop-blur-sm text-white px-3 py-2 text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none border border-green-300/30"
                       >
                         Buy
                       </button>
                       <button
                         onClick={handleCryptoSell}
                         disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
-                        className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 py-2 text-sm font-bold rounded-lg hover:from-red-700 hover:to-rose-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                        className="flex-1 bg-white/20 backdrop-blur-sm text-white px-3 py-2 text-sm font-bold rounded-lg hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none border border-red-300/30"
                       >
                         Sell
                       </button>
