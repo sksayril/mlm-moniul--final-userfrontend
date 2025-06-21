@@ -36,6 +36,7 @@ import {
 import ReactApexChart from 'react-apexcharts';
 import { Link } from 'react-router-dom';
 
+
 // Utility function to get token from sessionStorage
 const getSessionToken = () => {
   try {
@@ -1718,7 +1719,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       if (response.ok && data.status === 'success') {
         setInvestmentMessage({ 
           type: 'success', 
-          text: `🎉 Investment Request Submitted Successfully! 💰\n\nYour ${selectedInvestmentCurrency === 'inr' ? '₹5,999' : '5,999 USDT'} investment has been received and is being processed.\n\n✅ Payment ID: ${investmentPaymentID}\n⏰ Processing Time: 24-48 hours\n📧 You'll receive confirmation via email\n\nThank you for investing with us! 🚀` 
+          text: `🎉 Investment Request Submitted Successfully! 💰\n\nYour ${selectedInvestmentCurrency === 'inr' ? '₹5,999' : '$72'} investment has been received and is being processed.\n\n✅ Payment ID: ${investmentPaymentID}\n⏰ Processing Time: 24-48 hours\n📧 You'll receive confirmation via email\n\nThank you for investing with us! 🚀` 
         });
         
         // Reset form
@@ -2251,8 +2252,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
                   <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
                   <div className="font-semibold text-sm sm:text-base text-center">My Direct</div>
-                  <div className="text-xs mt-1 text-center">Active : 0</div>
-                  <div className="text-xs text-center">Inactive : 0</div>
+                  <div className="text-xs mt-1 text-center">Active : {userData?.downline?.length || 0}</div>
+                  <div className="text-xs text-center">Total Users : {userData?.downline?.length || 0}</div>
                 </div>
                 {/* My Single Leg Team */}
                 {/* <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px] sm:col-span-2 lg:col-span-1">
@@ -6511,7 +6512,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             <p className="text-sm text-gray-600">Pay with USDT</p>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-blue-600">5,999 USDT</div>
+                            <div className="text-2xl font-bold text-blue-600">$72</div>
                             <div className="text-sm text-gray-500">Investment Amount</div>
                           </div>
                         </div>
@@ -6541,7 +6542,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Investment Payment - {selectedInvestmentCurrency === 'inr' ? '₹5,999' : '5,999 USDT'}
+                      Investment Payment - {selectedInvestmentCurrency === 'inr' ? '₹5,999' : '$72'}
                     </h3>
                     <button
                       onClick={() => setShowInvestmentPayment(false)}
@@ -6561,15 +6562,15 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="font-medium">Account Name:</span>
-                              <span>MLM Investment Ltd</span>
+                              <span>ForLifeTrading India Ltd</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-medium">Account Number:</span>
-                              <span>1234567890123456</span>
+                              <span>43388906230</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-medium">IFSC Code:</span>
-                              <span>SBIN0001234</span>
+                              <span>SBIN0009696</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-medium">Bank Name:</span>
@@ -6587,14 +6588,15 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                           <h5 className="font-medium mb-3">UPI QR Code</h5>
                           <div className="bg-gray-100 p-4 rounded-lg inline-block">
                             <div className="w-48 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                              <div className="text-center">
-                                <div className="text-4xl mb-2">📱</div>
-                                <div className="text-sm text-gray-600">UPI QR Code</div>
-                                <div className="text-xs text-gray-500 mt-1">Scan to pay ₹5,999</div>
-                              </div>
+                              <img 
+                                src="/image.png" 
+                                alt="UPI QR Code"
+                                className="w-44 h-44 object-contain"
+                              />
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-2">UPI ID: mlminvestment@paytm</p>
+                          <p className="text-sm text-gray-600 mt-2">Scan to pay ₹5,999</p>
+                          <p className="text-sm text-gray-600">UPI ID: mlminvestment@paytm</p>
                         </div>
                       </>
                     ) : (
@@ -6603,17 +6605,17 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-semibold text-blue-800 mb-3">USDT Wallet Details</h4>
                           <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
+                            {/* <div className="flex justify-between">
                               <span className="font-medium">Network:</span>
                               <span>TRC20 (Tron)</span>
-                            </div>
+                            </div> */}
                             <div className="flex justify-between">
                               <span className="font-medium">Wallet Address:</span>
-                              <span className="font-mono text-xs">TYkJ8yJqGZhNP3v4d1KJf2k9mN8pQ1rW3x</span>
+                              <span className="font-mono text-xs">0x291e8c34cdea3c833a77f2f3c96eaed453659ca3</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-medium">Amount:</span>
-                              <span className="font-bold text-blue-600">5,999 USDT</span>
+                              <span className="font-bold text-blue-600">$72</span>
                             </div>
                           </div>
                         </div>
@@ -6622,15 +6624,16 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <div className="text-center">
                           <h5 className="font-medium mb-3">USDT Wallet QR Code</h5>
                           <div className="bg-gray-100 p-4 rounded-lg inline-block">
-                            <div className="w-48 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                              <div className="text-center">
-                                <div className="text-4xl mb-2">₿</div>
-                                <div className="text-sm text-gray-600">USDT Wallet</div>
-                                <div className="text-xs text-gray-500 mt-1">Scan to send 5,999 USDT</div>
-                              </div>
+                            <div className="w-25 h-25 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
+                              <img 
+                                src="/crupto.png" 
+                                alt="USDT Wallet QR Code"
+                                className="w-25 h-25 object-contain"
+                              />
                             </div>
                           </div>
-                          <p className="text-xs text-gray-600 mt-2 font-mono">TYkJ8yJqGZhNP3v4d1KJf2k9mN8pQ1rW3x</p>
+                          <p className="text-sm text-gray-600 mt-2">Scan to send $72</p>
+                          <p className="text-xs text-gray-600 font-mono">0x291e8c34cdea3c833a77f2f3c96eaed453659ca3</p>
                         </div>
                       </>
                     )}
