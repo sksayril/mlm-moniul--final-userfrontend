@@ -95,7 +95,7 @@ const sidebarMenu = [
   { label: 'Referral Link', icon: LinkIcon },
   { label: 'Income Wallet', icon: DollarSign },
   { label: 'My Investment', icon: BarChart3 },
-  { label: 'FFT Coin Transaction', icon: ArrowLeftRight },
+  { label: 'FLT Coin Transaction', icon: ArrowLeftRight },
   { label: 'Your Network', icon: Network },
   // { label: 'Update Name', icon: Edit },
   { label: 'Account Settings', icon: Settings },
@@ -488,7 +488,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
   // Fetch crypto transactions when FFT Coin Transaction section is active
   useEffect(() => {
-    if (activeMenu === 'FFT Coin Transaction') {
+    if (activeMenu === 'FLT Coin Transaction') {
       fetchCryptoTransactions();
     }
   }, [activeMenu]);
@@ -2556,7 +2556,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 rounded-full flex items-center justify-center overflow-hidden bg-white">
                         <img 
                           src="/fftcoin.jpeg" 
-                          alt="FFT Coin" 
+                          alt="FLT Coin" 
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -2570,7 +2570,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <span>
                           {displayCryptoBalance !== null 
                             ? displayCryptoBalance.toFixed(2) 
-                            : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT
+                            : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FLT
                         </span>
                         {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
                           <ArrowUp className="h-5 w-5 text-green-600" />
@@ -2625,7 +2625,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               
               {/* MLM Coin Price Chart */}
               <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">FFT Coin Price (Live)</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">FLT Coin Price (Live)</h3>
                 <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
                   <ReactApexChart 
                     options={coinChartOptions}
@@ -5006,7 +5006,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
             </div>
-          ) : activeMenu === 'FFT Coin Transaction' ? (
+          ) : activeMenu === 'FLT Coin Transaction' ? (
             /* FFT Coin Transaction Section */
             <div className="space-y-6">
               {/* Header */}
@@ -5017,8 +5017,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                       <ArrowLeftRight className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800">FFT Coin Transactions</h3>
-                      <p className="text-gray-600">View your FFT Coin transaction history</p>
+                      <h3 className="text-xl font-bold text-gray-800">FLT Coin Transactions</h3>
+                      <p className="text-gray-600">View your FLT Coin transaction history</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -5211,7 +5211,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     <div className="text-center py-8">
                       <ArrowLeftRight className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600">No transactions found</p>
-                      <p className="text-gray-500 text-sm mt-2">Your FFT Coin transaction history will appear here</p>
+                      <p className="text-gray-500 text-sm mt-2">Your FLT Coin transaction history will appear here</p>
                     </div>
                   )}
                 </div>
