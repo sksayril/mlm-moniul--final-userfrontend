@@ -18,7 +18,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('https://7cvccltb-3111.inc1.devtunnels.ms/api/auth/signin', {
+      const response = await fetch('https://api.forlifetradingindia.life/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
