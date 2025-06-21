@@ -165,6 +165,11 @@ interface UserData {
   downline?: any[];
   withdrawals?: any[];
   investments?: any[];
+  dailyIncomeStats?: {
+    totalDailyIncome: number;
+    lastDailyIncome: any;
+    dailyIncomeAmount: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -2124,7 +2129,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   }
 
   return (
-    <div className="h-screen flex bg-[#f3f4f6] overflow-hidden">
+    <div className="h-screen w-screen flex bg-[#f3f4f6] overflow-hidden max-w-full">
       {/* Sidebar for desktop and mobile */}
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -2228,7 +2233,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         </div>
       </aside>
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col h-screen transition-all duration-300 ${
+      <div className={`flex-1 flex flex-col h-screen transition-all duration-300 min-w-0 max-w-full ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         {/* Top Bar */}
@@ -2260,9 +2265,63 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           </div>
         </header>
         {/* Content Area */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-[#f3f4f6] overflow-y-auto">
+        <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto overflow-x-hidden max-w-full relative ${
+          activeMenu === 'Dashboard' 
+            ? 'bg-black' 
+            : 'bg-[#f3f4f6]'
+        }`}>
+          {/* Starry Galaxy Background - Only for Dashboard */}
+          {activeMenu === 'Dashboard' && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* Galaxy Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/30 to-indigo-900/20"></div>
+              
+              {/* Animated Stars */}
+              <div className="absolute inset-0">
+                {/* Large Stars */}
+                <div className="absolute top-10 left-10 w-2 h-2 bg-white rounded-full animate-pulse opacity-80"></div>
+                <div className="absolute top-20 right-20 w-1 h-1 bg-blue-200 rounded-full animate-pulse opacity-60"></div>
+                <div className="absolute top-32 left-1/4 w-1.5 h-1.5 bg-purple-200 rounded-full animate-pulse opacity-70"></div>
+                <div className="absolute top-40 right-1/3 w-1 h-1 bg-white rounded-full animate-pulse opacity-50"></div>
+                <div className="absolute top-60 left-1/2 w-2 h-2 bg-blue-100 rounded-full animate-pulse opacity-80"></div>
+                <div className="absolute top-80 right-10 w-1 h-1 bg-purple-100 rounded-full animate-pulse opacity-60"></div>
+                <div className="absolute top-96 left-20 w-1.5 h-1.5 bg-white rounded-full animate-pulse opacity-70"></div>
+                
+                {/* Medium Stars */}
+                <div className="absolute top-16 left-1/3 w-1 h-1 bg-white rounded-full animate-pulse opacity-40"></div>
+                <div className="absolute top-28 right-1/4 w-1 h-1 bg-blue-100 rounded-full animate-pulse opacity-50"></div>
+                <div className="absolute top-44 left-3/4 w-1 h-1 bg-purple-100 rounded-full animate-pulse opacity-40"></div>
+                <div className="absolute top-52 right-1/2 w-1 h-1 bg-white rounded-full animate-pulse opacity-30"></div>
+                <div className="absolute top-72 left-1/6 w-1 h-1 bg-blue-200 rounded-full animate-pulse opacity-50"></div>
+                <div className="absolute top-88 right-1/6 w-1 h-1 bg-purple-200 rounded-full animate-pulse opacity-40"></div>
+                
+                {/* Small Stars */}
+                <div className="absolute top-24 left-1/5 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-30"></div>
+                <div className="absolute top-36 right-1/5 w-0.5 h-0.5 bg-blue-100 rounded-full animate-pulse opacity-40"></div>
+                <div className="absolute top-48 left-2/3 w-0.5 h-0.5 bg-purple-100 rounded-full animate-pulse opacity-30"></div>
+                <div className="absolute top-56 right-2/3 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-20"></div>
+                <div className="absolute top-68 left-1/8 w-0.5 h-0.5 bg-blue-200 rounded-full animate-pulse opacity-40"></div>
+                <div className="absolute top-76 right-1/8 w-0.5 h-0.5 bg-purple-200 rounded-full animate-pulse opacity-30"></div>
+                <div className="absolute top-84 left-3/8 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-20"></div>
+                <div className="absolute top-92 right-3/8 w-0.5 h-0.5 bg-blue-100 rounded-full animate-pulse opacity-30"></div>
+                
+                {/* Twinkling Effect */}
+                <div className="absolute top-12 right-12 w-1 h-1 bg-white rounded-full animate-ping opacity-20"></div>
+                <div className="absolute top-64 left-16 w-1 h-1 bg-blue-200 rounded-full animate-ping opacity-15"></div>
+                <div className="absolute top-100 right-24 w-1 h-1 bg-purple-200 rounded-full animate-ping opacity-20"></div>
+              </div>
+              
+              {/* Nebula Clouds */}
+              <div className="absolute top-0 left-0 w-full h-full">
+                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute top-3/4 right-1/4 w-48 h-48 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-full blur-2xl animate-pulse"></div>
+              </div>
+            </div>
+          )}
+          
           {activeMenu === 'Dashboard' ? (
-            <>
+            <div className="relative z-10">
               {/* Top Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {/* User Info */}
@@ -2305,21 +2364,49 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
                 {/* My Team */}
-                <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
-                  <div className="font-semibold text-sm sm:text-base text-center">My Team</div>
-                  <div className="text-xs mt-1 text-center">Total Team : {userData?.teamSize || 0}</div>
-                  <div className="text-xs text-center">Rank : {userData?.rank || 'Newcomer'}</div>
-                  <div className="text-xs text-center">Referrals : {userData?.referrals?.length || 0}</div>
+                <div className="group relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-blue-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                    </div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">My Team</div>
+                    <div className="space-y-1 text-center">
+                      <div className="text-xs sm:text-sm text-blue-100 font-medium">Total Team: <span className="text-white font-bold">{userData?.teamSize || 0}</span></div>
+                      <div className="text-xs sm:text-sm text-blue-100 font-medium">Rank: <span className="text-white font-bold">{userData?.rank || 'Newcomer'}</span></div>
+                      <div className="text-xs sm:text-sm text-blue-100 font-medium">Referrals: <span className="text-white font-bold">{userData?.referrals?.length || 0}</span></div>
+                    </div>
+                  </div>
                 </div>
                 {/* My Direct */}
-                <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2" />
-                  <div className="font-semibold text-sm sm:text-base text-center">My Direct</div>
-                  <div className="text-xs mt-1 text-center">Active : {userData?.downline?.length || 0}</div>
-                  <div className="text-xs text-center">Total Users : {userData?.downline?.length || 0}</div>
+                <div className="group relative bg-gradient-to-br from-emerald-600 via-emerald-700 to-green-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-emerald-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                    </div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">My Direct</div>
+                    <div className="space-y-1 text-center">
+                      <div className="text-xs sm:text-sm text-emerald-100 font-medium">Active: <span className="text-white font-bold">{userData?.downline?.length || 0}</span></div>
+                      <div className="text-xs sm:text-sm text-emerald-100 font-medium">Total Users: <span className="text-white font-bold">{userData?.downline?.length || 0}</span></div>
+                    </div>
+                  </div>
+                </div>
+                {/* Daily Income */}
+                <div className="group relative bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-purple-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                      <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                    </div>
+                    <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Daily Income</div>
+                    <div className="space-y-1 text-center">
+                      <div className="text-xs sm:text-sm text-purple-100 font-medium">Total: <span className="text-white font-bold">₹{userData?.dailyIncomeStats?.totalDailyIncome?.toFixed(2) || '0.00'}</span></div>
+                      <div className="text-xs sm:text-sm text-purple-100 font-medium">Amount: <span className="text-white font-bold">₹{userData?.dailyIncomeStats?.dailyIncomeAmount?.toFixed(2) || '0.00'}</span></div>
+                    </div>
+                  </div>
                 </div>
                 {/* My Single Leg Team */}
                 {/* <div className="bg-[#1856a7] rounded-lg shadow p-3 sm:p-4 text-white flex flex-col items-center min-h-[100px] sm:min-h-[110px] sm:col-span-2 lg:col-span-1">
@@ -2333,35 +2420,52 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="text-xs text-center">Inactive : 0</div>
                 </div> */}
                 {/* Level Income */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Level Income</div>
-                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">0.00</div>
+                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-blue-300 hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    </div>
+                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Level Income</div>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">₹0.00</div>
+                  </div>
                 </div>
                 {/* Direct Bonus */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Direct Bonus</div>
-                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
-                    ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
+                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-emerald-300 hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    </div>
+                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Direct Bonus</div>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                      ₹{userData?.incomeWallet?.directIncome?.toFixed(2) || '0.00'}
+                    </div>
                   </div>
                 </div>
                 {/* Income Wallet */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Income Wallet</div>
-                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
-                    ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
+                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-purple-300 hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      <Wallet className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    </div>
+                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Income Wallet</div>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                      ₹{userData?.incomeWallet?.balance?.toFixed(2) || '0.00'}
+                    </div>
                   </div>
                 </div>
                 {/* Investment Wallet */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center justify-center min-h-[100px] sm:min-h-[110px] relative">
+                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[120px] sm:min-h-[140px] border border-gray-200 hover:border-orange-300 hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
                   {/* Percentage Change Indicator - Only show if balance > 0 */}
                   {(userData?.investmentWallet?.balance || 0) > 0 && (
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                    <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold flex items-center transition-all duration-300 shadow-lg ${
                       investmentPercentageChange >= 0 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-red-100 text-red-700'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+                        : 'bg-gradient-to-r from-red-500 to-rose-500 text-white'
                     }`}>
                       {investmentPercentageChange >= 0 ? (
                         <span className="flex items-center">
@@ -2381,47 +2485,53 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </div>
                   )}
                   
-                  <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Investment Wallet</div>
-                  <div className="flex flex-col items-center">
-                    <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
-                      (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'text-green-600' : 
-                      (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'text-red-600' : 'text-[#1856a7]'
-                    } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
-                      <span>₹{displayInvestmentBalance !== null 
-                        ? displayInvestmentBalance.toFixed(2) 
-                        : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
-                      {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
-                        <ArrowUp className="h-4 w-4 text-green-600" />
-                      ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
-                        <ArrowDown className="h-4 w-4 text-red-600" />
-                      ) : null}
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                     </div>
-                    {(userData?.investmentWallet?.balance || 0) > 0 && (
-                      <div className={`text-xs font-medium ${
-                        investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
+                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Investment Wallet</div>
+                    <div className="flex flex-col items-center">
+                      <div className={`text-2xl sm:text-3xl font-bold mb-1 transition-all duration-300 ${
+                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange >= 0 ? 'bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent' : 
+                        (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? 'bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent' : 'bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent'
+                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
+                        <span>₹{displayInvestmentBalance !== null 
+                          ? displayInvestmentBalance.toFixed(2) 
+                          : userData?.investmentWallet?.balance?.toFixed(2) || '0.00'}</span>
+                        {(userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange > 0 ? (
+                          <ArrowUp className="h-5 w-5 text-green-600" />
+                        ) : (userData?.investmentWallet?.balance || 0) > 0 && investmentPercentageChange < 0 ? (
+                          <ArrowDown className="h-5 w-5 text-red-600" />
+                        ) : null}
                       </div>
+                      {(userData?.investmentWallet?.balance || 0) > 0 && (
+                        <div className={`text-sm font-bold ${
+                          investmentPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {investmentPercentageChange > 0 ? '+' : ''}{investmentPercentageChange.toFixed(2)}%
+                        </div>
+                      )}
+                    </div>
+                    {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
+                      <button
+                        onClick={handleInvestmentClick}
+                        className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Click to Invest
+                      </button>
                     )}
                   </div>
-                  {(!userData?.investmentWallet?.balance || userData.investmentWallet.balance === 0) && (
-                    <button
-                      onClick={handleInvestmentClick}
-                      className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Click to Invest
-                    </button>
-                  )}
                 </div>
                 {/* Crypto Wallet */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[140px] sm:min-h-[150px] relative">
+                <div className="group relative bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 flex flex-col items-center min-h-[160px] sm:min-h-[180px] border border-gray-200 hover:border-yellow-300 hover:scale-105 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
                   {/* Percentage Change Indicator - Only show if balance > 0 */}
                   {(userData?.cryptoWallet?.balance || 0) > 0 && (
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold flex items-center transition-all duration-300 ${
+                    <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold flex items-center transition-all duration-300 shadow-lg ${
                       cryptoPercentageChange >= 0 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-red-100 text-red-700'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+                        : 'bg-gradient-to-r from-red-500 to-rose-500 text-white'
                     }`}>
                       {cryptoPercentageChange >= 0 ? (
                         <span className="flex items-center">
@@ -2441,65 +2551,62 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </div>
                   )}
                   
-                  <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 rounded-full flex items-center justify-center overflow-hidden">
-                    <img 
-                      src="/fftcoin.jpeg" 
-                      alt="FFT Coin" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Crypto Wallet</div>
-                  <div className="flex flex-col items-center mb-3">
-                    <div className={`text-base sm:text-lg font-bold mb-1 transition-all duration-300 ${
-                      (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'text-green-600' : 
-                      (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'text-red-600' : 'text-[#1856a7]'
-                    } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1`}>
-                      <span>
-                        {displayCryptoBalance !== null 
-                          ? displayCryptoBalance.toFixed(2) 
-                          : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT Coin
-                      </span>
-                      {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
-                        <ArrowUp className="h-4 w-4 text-green-600" />
-                      ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
-                        <ArrowDown className="h-4 w-4 text-red-600" />
-                      ) : null}
-                    </div>
-                    {(userData?.cryptoWallet?.balance || 0) > 0 && (
-                      <div className={`text-xs font-medium ${
-                        cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
+                  <div className="relative z-10 w-full flex flex-col items-center">
+                    <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full p-3 mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300 ring-4 ring-yellow-200/50">
+                      <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 rounded-full flex items-center justify-center overflow-hidden bg-white">
+                        <img 
+                          src="/fftcoin.jpeg" 
+                          alt="FFT Coin" 
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* Buy/Sell Buttons */}
-                  <div className="flex gap-2 w-full">
-                    <button
-                      onClick={handleCryptoBuy}
-                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
-                      className="flex-1 bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      Buy
-                    </button>
-                    <button
-                      onClick={handleCryptoSell}
-                      disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
-                      className="flex-1 bg-red-600 text-white px-2 py-1 text-xs rounded hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      Sell
-                    </button>
+                    </div>
+                    <div className="font-bold text-gray-800 text-base sm:text-lg text-center mb-2">Crypto Wallet</div>
+                    <div className="flex flex-col items-center mb-4">
+                      <div className={`text-xl sm:text-2xl font-bold mb-1 transition-all duration-300 ${
+                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange >= 0 ? 'bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent' : 
+                        (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? 'bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent' : 'bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent'
+                      } ${balanceAnimating ? 'transform scale-110' : ''} flex items-center justify-center gap-1 text-center`}>
+                        <span>
+                          {displayCryptoBalance !== null 
+                            ? displayCryptoBalance.toFixed(2) 
+                            : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FFT
+                        </span>
+                        {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
+                          <ArrowUp className="h-5 w-5 text-green-600" />
+                        ) : (userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange < 0 ? (
+                          <ArrowDown className="h-5 w-5 text-red-600" />
+                        ) : null}
+                      </div>
+                      {(userData?.cryptoWallet?.balance || 0) > 0 && (
+                        <div className={`text-sm font-bold ${
+                          cryptoPercentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {cryptoPercentageChange > 0 ? '+' : ''}{cryptoPercentageChange.toFixed(2)}%
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Buy/Sell Buttons */}
+                    <div className="flex gap-3 w-full">
+                      <button
+                        onClick={handleCryptoBuy}
+                        disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-2 text-sm font-bold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={handleCryptoSell}
+                        disabled={!userData?.cryptoWallet?.balance || userData.cryptoWallet.balance <= 0}
+                        className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 py-2 text-sm font-bold rounded-lg hover:from-red-700 hover:to-rose-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                      >
+                        Sell
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {/* Total Withdraw */}
-                <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col items-center min-h-[100px] sm:min-h-[110px]">
-                  <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mb-2 text-[#1856a7]" />
-                  <div className="font-semibold text-[#1856a7] text-sm sm:text-base text-center">Total Withdraw</div>
-                  <div className="text-base sm:text-lg font-bold text-[#1856a7]">
-                    ₹{userData?.incomeWallet?.withdrawnAmount?.toFixed(2) || '0.00'}
-                  </div>
-                </div>
+
               </div>
               
               {/* Investment Performance Chart */}
@@ -2535,7 +2642,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <span className="font-medium text-blue-600">₹1.00</span> */}
                 </div>
               </div>
-            </>
+            </div>
           ) : activeMenu === 'My Investment' ? (
             /* My Investment Section */
             <div className="space-y-6">
@@ -3260,7 +3367,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             </div>
                             <div className="text-center">
                               <div className="text-2xl font-bold text-blue-600">
-                                ₹{matrixStructureData.matrixSummary?.totalMatrixIncome?.toFixed(2) || '0.00'}
+                                ₹{matrixStructureData.totalMatrixIncome?.totalMatrixIncome?.toFixed(2) || '0.00'}
                               </div>
                               <p className="text-sm text-gray-600">Matrix Income</p>
                             </div>
@@ -4718,10 +4825,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                             <span className="text-gray-600">Matrix Income:</span>
                             <span className="font-medium">₹{incomeData.incomeBreakdown.matrixIncome?.toFixed(2) || '0.00'}</span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Rank Rewards:</span>
-                            <span className="font-medium">₹{incomeData.incomeBreakdown.rankRewards?.toFixed(2) || '0.00'}</span>
-                          </div>
+
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Self Income:</span>
                             <span className="font-medium">₹{incomeData.incomeBreakdown.selfIncome?.toFixed(2) || '0.00'}</span>
@@ -4824,19 +4928,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </p>
                   </div>
 
-                  {/* Rank Rewards */}
-                  <div className="bg-white rounded-lg p-4 border border-yellow-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <Award className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <span className="text-xs text-yellow-600 font-medium">RANK</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">Rank Rewards</p>
-                    <p className="text-lg font-bold text-gray-800">
-                      ₹{userData?.incomeWallet?.rankRewards?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
+
                 </div>
 
                 {/* Additional Income Types */}
@@ -5624,15 +5716,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                                   ${incomeData.incomeBreakdown.matrixIncome?.toFixed(2) || '0.00'}
                                 </p>
                               </div>
-                              <div className="text-center">
-                                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                  <Award className="h-6 w-6 text-yellow-600" />
-                                </div>
-                                <p className="text-sm text-gray-600">Rank Rewards</p>
-                                <p className="text-lg font-bold text-gray-800">
-                                  ${incomeData.incomeBreakdown.rankRewards?.toFixed(2) || '0.00'}
-                                </p>
-                              </div>
+
                               <div className="text-center">
                                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                                   <User className="h-6 w-6 text-green-600" />
