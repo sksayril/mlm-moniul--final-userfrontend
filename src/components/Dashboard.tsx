@@ -170,6 +170,20 @@ interface UserData {
     lastDailyIncome: any;
     dailyIncomeAmount: number;
   };
+  matrixStats?: {
+    totalMatrixIncome: number;
+    matrixLevels: Array<{
+      level: number;
+      membersCount: number;
+      requiredMembers: number;
+      rewardAmount: number;
+      isCompleted: boolean;
+      progress: string;
+      progressPercentage: string;
+      nextReward: number;
+      membersNeeded: number;
+    }>;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -297,6 +311,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [displayInvestmentBalance, setDisplayInvestmentBalance] = useState<number | null>(null);
   const [displayCryptoBalance, setDisplayCryptoBalance] = useState<number | null>(null);
   const [balanceAnimating, setBalanceAnimating] = useState(false);
+  const [currentFltPrice, setCurrentFltPrice] = useState<number>(0.55); // Starting FLT price
+  const [previousFltPrice, setPreviousFltPrice] = useState<number>(0.55); // Previous FLT price for comparison
   
   // Crypto Buy/Sell states
   const [showCryptoBuyModal, setShowCryptoBuyModal] = useState(false);
@@ -400,7 +416,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       }
     },
     title: {
-      text: 'MLM Coin Price',
+      text: 'FLT Coin Price',
       align: 'left',
       style: {
         fontSize: '16px',
@@ -600,6 +616,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setCoinChartSeries([{
           data: newData
         }]);
+        
+        // Update current FLT price display
+        setPreviousFltPrice(currentFltPrice);
+        setCurrentFltPrice(parseFloat(newClose.toFixed(2)));
       }
     };
     
@@ -676,7 +696,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }]);
   };
   
-  // Generate random candlestick data for MLM Coin
+  // Generate random candlestick data for FLT Coin
   const generateCoinChartData = () => {
     const data = [];
     
@@ -705,6 +725,11 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setCoinChartSeries([{
       data: data
     }]);
+    
+    // Set initial current FLT price from the last generated data point
+    if (data.length > 0) {
+      setCurrentFltPrice(data[data.length - 1].y[3]); // Close price of last candle
+    }
   };
   
   // Update display balances based on percentage changes
@@ -2430,6 +2455,30 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                      <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">₹0.00</div>
                    </div>
                  </div>
+                 {/* Matrix Level Income */}
+                 <div className="group relative bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-indigo-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
+                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+                   <div className="relative z-10 w-full flex flex-col items-center">
+                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mb-3 group-hover:bg-white/30 transition-all duration-300">
+                       <Network className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white drop-shadow-sm" />
+                     </div>
+                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">Matrix Level Income</div>
+                     <div className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                       ₹{userData?.matrixStats?.totalMatrixIncome?.toFixed(2) || '0.00'}
+                     </div>
+                     {/* Matrix Progress Indicator */}
+                     {userData?.matrixStats?.matrixLevels && userData.matrixStats.matrixLevels.length > 0 && (
+                       <div className="mt-2 text-center">
+                         <div className="text-xs text-white/80 font-medium">
+                           Level {userData.matrixStats.matrixLevels[0].level}: {userData.matrixStats.matrixLevels[0].progress}
+                         </div>
+                         <div className="text-xs text-white/60">
+                           Next: ₹{userData.matrixStats.matrixLevels[0].nextReward}
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 </div>
                                  {/* Direct Bonus */}
                  <div className="group relative bg-gradient-to-br from-rose-600 via-pink-700 to-red-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 text-white flex flex-col items-center min-h-[120px] sm:min-h-[140px] border border-rose-500/20 backdrop-blur-sm hover:scale-105 hover:-translate-y-1">
                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
@@ -2570,7 +2619,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <span>
                           {displayCryptoBalance !== null 
                             ? displayCryptoBalance.toFixed(2) 
-                            : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FLT
+                            : userData?.cryptoWallet?.balance?.toFixed(2) || '0.00'} FLT Coin
                         </span>
                         {(userData?.cryptoWallet?.balance || 0) > 0 && cryptoPercentageChange > 0 ? (
                           <ArrowUp className="h-5 w-5 text-green-300" />
@@ -2623,9 +2672,38 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
               </div>
               
-              {/* MLM Coin Price Chart */}
+                              {/* FLT Coin Price Chart */}
               <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">FLT Coin Price (Live)</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 sm:mb-0">FLT Coin Price (Live)</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                      <span className="text-sm text-gray-600">Live</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-2xl font-bold text-blue-600">
+                        ₹{currentFltPrice.toFixed(2)}
+                      </div>
+                      {currentFltPrice !== previousFltPrice && (
+                        <div className={`flex items-center ${currentFltPrice > previousFltPrice ? 'text-green-500' : 'text-red-500'}`}>
+                          {currentFltPrice > previousFltPrice ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                          )}
+                          <span className="text-sm font-medium ml-1">
+                            {((currentFltPrice - previousFltPrice) / previousFltPrice * 100).toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
                   <ReactApexChart 
                     options={coinChartOptions}
@@ -3083,7 +3161,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <div className="bg-white rounded-lg shadow p-6">
                 {activeTpinCard === 'Get TPin' && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">MLM Coin Price Chart</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">FLT Coin Price Chart</h3>
                     <div className="h-[250px] sm:h-[300px] md:h-[350px] w-full">
                       <ReactApexChart 
                         options={coinChartOptions}
@@ -3095,7 +3173,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </div>
                     <div className="mt-4 text-center">
                       <p className="text-sm text-gray-600">
-                        MLM Coin price fluctuates between ₹0.10 (10 paisa) and ₹1.00 based on market demand.
+                        FLT Coin price fluctuates between ₹0.10 (10 paisa) and ₹1.00 based on market demand.
                       </p>
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                         <div className="text-center bg-gray-50 p-3 rounded-lg">
