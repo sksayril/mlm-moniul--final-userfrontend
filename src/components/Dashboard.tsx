@@ -283,6 +283,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [isLoadingMatrixStructure, setIsLoadingMatrixStructure] = useState(false);
   const [matrixStructureError, setMatrixStructureError] = useState('');
   const [activeMlmTab, setActiveMlmTab] = useState('overview');
+  const [activeMatrixLevel, setActiveMatrixLevel] = useState('');
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -506,6 +507,21 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }
   }, [activeMenu]);
 
+  // Set default active matrix level when matrix data loads
+  useEffect(() => {
+    if (matrixStructureData?.allMatrixUsers && !activeMatrixLevel) {
+      // Set level1 as default, or first available level
+      if (matrixStructureData.allMatrixUsers.level1) {
+        setActiveMatrixLevel('level1');
+      } else {
+        const firstLevel = Object.keys(matrixStructureData.allMatrixUsers)[0];
+        if (firstLevel) {
+          setActiveMatrixLevel(firstLevel);
+        }
+      }
+    }
+  }, [matrixStructureData, activeMatrixLevel]);
+
   // Fetch withdrawal history when Withdrawal section is active and History card is selected
   useEffect(() => {
     if (activeMenu === 'Withdrawal' && activeWithdrawalCard === 'Withdrawal History') {
@@ -564,7 +580,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+      const response = await fetch('http://localhost:3111/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -815,7 +831,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/updateMe', {
+      const response = await fetch('http://localhost:3111/api/auth/updateMe', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -928,7 +944,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('paymentId', paymentID);
       formData.append('screenshot', paymentImage);
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/purchase', {
+      const response = await fetch('http://localhost:3111/api/tpin/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -947,7 +963,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         setPaymentImagePreview('');
         
         // Refresh user data
-        const updatedUserResponse = await fetch('https://api.forlifetradingindia.life/api/auth/me', {
+        const updatedUserResponse = await fetch('http://localhost:3111/api/auth/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1006,7 +1022,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/direct', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/direct', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1045,7 +1061,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/income', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/income', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1103,7 +1119,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/activate', {
+      const response = await fetch('http://localhost:3111/api/auth/activate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1147,7 +1163,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/dashboard', {
+      const response = await fetch('http://localhost:3111/api/mlm/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1183,7 +1199,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/matrix/structure', {
+      const response = await fetch('http://localhost:3111/api/mlm/matrix/structure', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1225,7 +1241,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/transfer', {
+      const response = await fetch('http://localhost:3111/api/tpin/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1326,7 +1342,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         };
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/request', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/request', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1375,7 +1391,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/approved/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/approved/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1405,7 +1421,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/pending/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/pending/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1435,7 +1451,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/withdrawal/rejected/list', {
+      const response = await fetch('http://localhost:3111/api/mlm/withdrawal/rejected/list', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1487,7 +1503,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/mlm/referral/link', {
+      const response = await fetch('http://localhost:3111/api/mlm/referral/link', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1523,7 +1539,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/payments', {
+      const response = await fetch('http://localhost:3111/api/tpin/payments', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1563,7 +1579,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/tpin/status', {
+      const response = await fetch('http://localhost:3111/api/tpin/status', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1615,7 +1631,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/change-password', {
+      const response = await fetch('http://localhost:3111/api/auth/account/change-password', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1661,7 +1677,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1741,7 +1757,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/wallet', {
+      const response = await fetch('http://localhost:3111/api/investment/wallet', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1776,7 +1792,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/history', {
+      const response = await fetch('http://localhost:3111/api/investment/history', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1829,7 +1845,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       formData.append('screenshot', investmentPaymentImage);
       formData.append('investmentType', 'premium_plan');
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/investment/recharge', {
+      const response = await fetch('http://localhost:3111/api/investment/recharge', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1896,7 +1912,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/auth/account/profile', {
+      const response = await fetch('http://localhost:3111/api/auth/account/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2018,7 +2034,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/purchase', {
+      const response = await fetch('http://localhost:3111/api/crypto/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2089,7 +2105,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/sell', {
+      const response = await fetch('http://localhost:3111/api/crypto/sell', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2133,7 +2149,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     
     try {
       const token = getSessionToken();
-      const response = await fetch('https://api.forlifetradingindia.life/api/crypto/transactions', {
+      const response = await fetch('http://localhost:3111/api/crypto/transactions', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2441,8 +2457,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     </div>
                     <div className="font-bold text-base sm:text-lg text-center mb-2 text-white drop-shadow-sm">My Direct</div>
                     <div className="space-y-1 text-center">
-                      <div className="text-xs sm:text-sm text-emerald-100 font-medium">Active: <span className="text-white font-bold">{userData?.downline?.length || 0}</span></div>
-                      <div className="text-xs sm:text-sm text-emerald-100 font-medium">Total Users: <span className="text-white font-bold">{userData?.downline?.length || 0}</span></div>
+                      <div className="text-xs sm:text-sm text-emerald-100 font-medium">Active: <span className="text-white font-bold">{userData?.teamSize || 0}</span></div>
+                      {/* <div className="text-xs sm:text-sm text-emerald-100 font-medium">Total Users: <span className="text-white font-bold">{userData?.downline?.length || 0}</span></div> */}
                     </div>
                   </div>
                 </div>
@@ -3519,89 +3535,168 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div className="space-y-6">
                     {matrixStructureData ? (
                       <>
-                        {/* Matrix Summary */}
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                        {/* User Info */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
                           <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                            <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
-                            Matrix Summary
+                            <User className="h-5 w-5 mr-2 text-blue-600" />
+                            User Information
                           </h4>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                {matrixStructureData.matrixSummary?.totalLevels || 0}
+                              <div className="text-lg font-bold text-blue-600">
+                                {matrixStructureData.userInfo?.name || 'N/A'}
                               </div>
-                              <p className="text-sm text-gray-600">Total Levels</p>
+                              <p className="text-sm text-gray-600">Name</p>
                             </div>
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-blue-600">
-                                ₹{matrixStructureData.totalMatrixIncome?.totalMatrixIncome?.toFixed(2) || '0.00'}
+                              <div className="text-lg font-bold text-green-600">
+                                {matrixStructureData.userInfo?.userId || 'N/A'}
                               </div>
-                              <p className="text-sm text-gray-600">Matrix Income</p>
+                              <p className="text-sm text-gray-600">User ID</p>
                             </div>
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-purple-600">
-                                {matrixStructureData.matrixSummary?.totalDownlineMembers || 0}
+                              <div className="text-lg font-bold text-purple-600">
+                                {matrixStructureData.userInfo?.rank || 'N/A'}
                               </div>
-                              <p className="text-sm text-gray-600">Downline Members</p>
+                              <p className="text-sm text-gray-600">Rank</p>
                             </div>
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-600">
-                                ₹{matrixStructureData.matrixSummary?.activationIncome?.toFixed(2) || '0.00'}
+                              <div className="text-lg font-bold text-orange-600">
+                                {matrixStructureData.userInfo?.teamSize || 0}
                               </div>
-                              <p className="text-sm text-gray-600">Activation Income</p>
+                              <p className="text-sm text-gray-600">Team Size</p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Matrix Levels */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {Object.entries(matrixStructureData.matrixStructure || {}).map(([level, data]: [string, any]) => (
-                            <div key={level} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center">
-                                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                    <span className="text-blue-600 font-bold">L{level}</span>
+
+
+                        {/* All Matrix Users by Level */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                          <h4 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                            <Users className="h-5 w-5 mr-2 text-blue-600" />
+                            Matrix Users by Level
+                          </h4>
+                          
+                          {/* Level Tabs */}
+                          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 overflow-x-auto">
+                            {Object.entries(matrixStructureData.allMatrixUsers || {}).map(([levelKey, levelData]: [string, any]) => (
+                              <button
+                                key={levelKey}
+                                onClick={() => setActiveMatrixLevel(levelKey)}
+                                className={`flex-none py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                  activeMatrixLevel === levelKey
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                                }`}
+                              >
+                                Level {levelData.levelNumber} ({levelData.totalUsers || 0})
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Users Display */}
+                          {activeMatrixLevel && matrixStructureData.allMatrixUsers?.[activeMatrixLevel] && (
+                            <div className="space-y-4">
+                              <div className="bg-gray-50 rounded-lg p-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                  <div>
+                                    <div className="text-lg font-bold text-blue-600">
+                                      {matrixStructureData.allMatrixUsers[activeMatrixLevel].totalUsers || 0}
+                                    </div>
+                                    <p className="text-sm text-gray-600">Total Users</p>
                                   </div>
                                   <div>
-                                    <h5 className="font-semibold text-gray-800">Level {level}</h5>
-                                    <p className="text-sm text-gray-500">Matrix Level</p>
+                                    <div className="text-lg font-bold text-green-600">
+                                      {matrixStructureData.allMatrixUsers[activeMatrixLevel].activeUsers || 0}
+                                    </div>
+                                    <p className="text-sm text-gray-600">Active Users</p>
                                   </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-gray-800">
-                                    {data.currentCount || 0}/{data.capacity || 0}
+                                  <div>
+                                    <div className="text-lg font-bold text-red-600">
+                                      {matrixStructureData.allMatrixUsers[activeMatrixLevel].inactiveUsers || 0}
+                                    </div>
+                                    <p className="text-sm text-gray-600">Inactive Users</p>
                                   </div>
-                                  <p className="text-xs text-gray-500">Filled</p>
+                                  <div>
+                                    <div className="text-lg font-bold text-purple-600">
+                                      Level {matrixStructureData.allMatrixUsers[activeMatrixLevel].levelNumber || 0}
+                                    </div>
+                                    <p className="text-sm text-gray-600">Matrix Level</p>
+                                  </div>
                                 </div>
                               </div>
 
-                              <div className="space-y-3">
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Capacity:</span>
-                                  <span className="text-sm font-medium">{data.capacity || 0}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Income per Member:</span>
-                                  <span className="text-sm font-medium text-green-600">₹{data.incomePerMember || 0}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Total Potential:</span>
-                                  <span className="text-sm font-medium text-blue-600">₹{data.totalPotentialIncome?.toLocaleString() || 0}</span>
-                                </div>
-                                
-                                {/* Progress Bar */}
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${((data.currentCount || 0) / (data.capacity || 1)) * 100}%` }}
-                                  ></div>
-                                </div>
-                                <p className="text-xs text-gray-500 text-center">
-                                  {(((data.currentCount || 0) / (data.capacity || 1)) * 100).toFixed(1)}% Complete
-                                </p>
+                              {/* Users Grid */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {(matrixStructureData.allMatrixUsers[activeMatrixLevel].users || []).map((user: any, index: number) => (
+                                  <div key={user.id || index} className={`border rounded-lg p-4 ${
+                                    user.isActive ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                                  }`}>
+                                    <div className="flex items-center mb-3">
+                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                                        user.isActive ? 'bg-green-100' : 'bg-red-100'
+                                      }`}>
+                                        <User className={`h-5 w-5 ${
+                                          user.isActive ? 'text-green-600' : 'text-red-600'
+                                        }`} />
+                                      </div>
+                                      <div className="flex-1">
+                                        <h5 className="font-semibold text-gray-800">{user.name || 'N/A'}</h5>
+                                        <p className="text-sm text-gray-600">{user.userId || 'N/A'}</p>
+                                      </div>
+                                      <span className={`px-2 py-1 text-xs rounded-full ${
+                                        user.isActive 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {user.status || (user.isActive ? 'Active' : 'Inactive')}
+                                      </span>
+                                    </div>
+                                    
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Email:</span>
+                                        <span className="font-medium text-right">{user.email || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Password:</span>
+                                        <span className="font-medium text-right text-blue-600">{user.originalPassword || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Joined:</span>
+                                        <span className="font-medium text-right">
+                                          {user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'N/A'}
+                                        </span>
+                                      </div>
+                                      {user.activatedAt && (
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Activated:</span>
+                                          <span className="font-medium text-right">
+                                            {new Date(user.activatedAt).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {user.wallet && (
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Balance:</span>
+                                          <span className="font-medium text-green-600">₹{user.wallet.balance || '0'}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
+
+                              {(!matrixStructureData.allMatrixUsers[activeMatrixLevel].users || 
+                                matrixStructureData.allMatrixUsers[activeMatrixLevel].users.length === 0) && (
+                                <div className="text-center py-8">
+                                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                  <p className="text-gray-600">No users found in this level</p>
+                                </div>
+                              )}
                             </div>
-                          ))}
+                          )}
                         </div>
                       </>
                     ) : (
